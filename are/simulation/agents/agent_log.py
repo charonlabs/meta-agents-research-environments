@@ -159,6 +159,7 @@ class LLMOutputThoughtActionLog(BaseAgentLog):
 @dataclass
 class RationaleLog(BaseAgentLog):
     content: str
+    raw_reasoning: list[dict[str, Any]] | None = None
 
     def get_content_for_llm(self) -> str | None:
         return self.content
@@ -171,6 +172,8 @@ class RationaleLog(BaseAgentLog):
 class ToolCallLog(BaseAgentLog):
     tool_name: str
     tool_arguments: str | dict[str, str]
+    call_id: str | None = None
+    raw_tool_call: dict[str, Any] | None = None
 
     def get_content_for_llm(self) -> str | None:
         return json.dumps(
@@ -188,6 +191,8 @@ class ToolCallLog(BaseAgentLog):
 class ObservationLog(BaseAgentLog):
     content: str
     attachments: list[Attachment] = field(default_factory=list)
+    tool_name: str | None = None
+    call_id: str | None = None
 
     def get_content_for_llm(self) -> str | None:
         return self.content

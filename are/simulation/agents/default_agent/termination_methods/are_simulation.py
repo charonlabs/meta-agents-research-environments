@@ -13,6 +13,7 @@ from are.simulation.agents.default_agent.base_agent import RunningState, Termina
 from are.simulation.agents.default_agent.tools.json_action_executor import (
     JsonActionExecutor,
 )
+from are.simulation.agents.default_agent.tools.responses_action_executor import ResponsesActionExecutor
 from are.simulation.exceptions import MaxIterationsAgentError
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ def termination_condition_are_simulation(agent, termination_tool_names: list[str
     """
     tool_call = agent.get_last_log_of_type(ToolCallLog)
     tool_name = tool_call.tool_name if tool_call else ""
-    if isinstance(agent.action_executor, JsonActionExecutor):
+    if isinstance(agent.action_executor, (JsonActionExecutor, ResponsesActionExecutor)):
         if any(
             tool_name.strip() == agent.get_original_tool_name(target_tool_name).strip()
             for target_tool_name in termination_tool_names

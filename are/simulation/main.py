@@ -149,6 +149,12 @@ def validate_main_scenario_sources(**scenario_params):
     default=False,
     help="List all available scenarios and exit.",
 )
+@click.option(
+    "--agent-config",
+    type=str,
+    default="{}",
+    help="JSON string of overrides applied to the agent configuration (e.g., '{\"base_agent_config\":{\"max_iterations\":20}}').",
+)
 def main(
     model: str,
     provider: str | None = None,
@@ -173,6 +179,7 @@ def main(
     export: bool = False,
     wait_for_user_input_timeout: float | None = None,
     list_scenarios: bool = False,
+    agent_config: str = "{}",
 ):
     """
     Main entry point for the Meta Agents Research Environments scenario runner CLI.
@@ -228,6 +235,7 @@ def main(
         wait_for_user_input_timeout=wait_for_user_input_timeout,
         output_dir=output_dir,
         endpoint=endpoint,
+        agent_config_params=agent_config,
         max_concurrent_scenarios=max_concurrent_scenarios,
         simulated_generation_time_mode=simulated_generation_time_mode,
         tool_augmentation_config=tool_augmentation_config,

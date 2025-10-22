@@ -5,6 +5,7 @@
 # the root directory of this source tree.
 
 
+import json
 import logging
 import random
 import time
@@ -221,6 +222,7 @@ class ScenarioRunner:
         provider: str | None = None,
         endpoint: str | None = None,
         max_turns: int | None = None,
+        agent_config_params: str = "{}",
         simulated_generation_time_mode: str = "measured",
         use_custom_logger: bool = True,
     ) -> ScenarioValidationResult:
@@ -230,6 +232,7 @@ class ScenarioRunner:
 
         # Set the use_custom_logger parameter in the base agent config
         agent_config.get_base_agent_config().use_custom_logger = use_custom_logger
+
         agent_config.get_base_agent_config().llm_engine_config = LLMEngineConfig(
             model_name=model, provider=provider, endpoint=endpoint
         )
@@ -301,6 +304,7 @@ class ScenarioRunner:
                     config.model_provider,
                     config.endpoint,
                     config.max_turns,
+                    config.agent_config_params,
                     config.simulated_generation_time_mode,
                     config.use_custom_logger,
                 )

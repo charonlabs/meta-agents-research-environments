@@ -24,6 +24,7 @@ class AgentAction:
     rationale: str
     action: str | None
     action_type: str | None = None
+    responses_output: list[dict[str, Any]] | None = None
 
 
 @dataclass
@@ -34,6 +35,9 @@ class ParsedAction:
     app_name: str | None = None
     arguments: str | dict[str, Any] | None = None
     rationale: str | None = None
+    call_id: str | None = None
+    raw_reasoning: list[dict[str, Any]] | None = None
+    raw_tool_call: dict[str, Any] | None = None
 
 
 class BaseActionExecutor:

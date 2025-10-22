@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from random import Random
 from types import NoneType, UnionType
-from typing import Any, Callable, Union, get_args, get_origin, get_type_hints
+from typing import Any, Callable, Literal, Union, get_args, get_origin, get_type_hints
 
 import docstring_parser
 from termcolor import colored
@@ -240,6 +240,186 @@ class AppTool:
             }
         d["function"]["parameters"]["required"] = [arg.name for arg in self.args]
         return d
+
+    def to_open_ai_responses(self):
+        """
+        Convert the tool to OpenAI Responses function calling format.
+
+        Example::
+
+            {
+                "type": "function",
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA"
+                        },
+                        "unit": {
+                            "type": "string",
+                            "enum": ["celsius", "fahrenheit"]
+                        }
+                    },
+                    "required": ["location"]
+                }
+            }
+        """
+        properties: dict[str, Any] = {}
+        required_fields: list[str] = []
+
+        for arg in self.args:
+            schema = self._schema_for_argument(arg)
+            if arg.description:
+                schema["description"] = arg.description
+            if arg.example_value is not None:
+                schema.setdefault("examples", [arg.example_value])
+            properties[arg.name] = schema
+
+            if not arg.has_default and not self._is_optional_type(arg.type_obj):
+                required_fields.append(arg.name)
+
+        parameters: dict[str, Any] = {
+            "type": "object",
+            "properties": properties,
+        }
+        if required_fields:
+            parameters["required"] = required_fields
+
+        tool_name = self._public_name or self.name
+        tool_description = self._public_description or self.function_description or ""
+
+        return {
+            "type": "function",
+            "name": tool_name,
+            "description": tool_description,
+            "parameters": parameters,
+        }
+
+    @staticmethod
+    def _schema_for_argument(arg: AppToolArg) -> dict[str, Any]:
+        type_obj = arg.type_obj
+
+        if type_obj in (None, "Any"):
+            return {"type": "object"}
+
+        if isinstance(type_obj, str):
+            normalized = type_obj.lower()
+            if normalized in {"str", "string"}:
+                return {"type": "string"}
+            if normalized in {"int", "integer"}:
+                return {"type": "integer"}
+            if normalized == "float":
+                return {"type": "number"}
+            if normalized == "bool":
+                return {"type": "boolean"}
+            if normalized.startswith("dict"):
+                return {"type": "object"}
+            if normalized.startswith("list") or normalized.startswith("sequence"):
+                return {"type": "array", "items": {"type": "string"}}
+            return {"type": "string"}
+
+        origin = get_origin(type_obj)
+        if origin is None:
+            if type_obj is str:
+                return {"type": "string"}
+            if type_obj is int:
+                return {"type": "integer"}
+            if type_obj is float:
+                return {"type": "number"}
+            if type_obj is bool:
+                return {"type": "boolean"}
+            if type_obj is dict:
+                return {"type": "object"}
+            if type_obj is list or type_obj is tuple or type_obj is set:
+                return {"type": "array", "items": {"type": "string"}}
+            if type_obj is Any:
+                return {"type": "object"}
+            return {"type": "string"}
+
+        args = get_args(type_obj)
+
+        if origin in {list, set, frozenset}:
+            item_schema = {"type": "string"}
+            if args:
+                item_schema = AppTool._schema_for_type(args[0])
+            return {"type": "array", "items": item_schema}
+
+        if origin is tuple:
+            if len(args) == 2 and args[1] is Ellipsis:
+                item_schema = AppTool._schema_for_type(args[0])
+                return {"type": "array", "items": item_schema}
+            return {
+                "type": "array",
+                "items": [AppTool._schema_for_type(arg_type) for arg_type in args],
+            }
+
+        if origin is dict:
+            value_schema = {"type": "string"}
+            if len(args) == 2:
+                value_schema = AppTool._schema_for_type(args[1])
+            schema: dict[str, Any] = {"type": "object"}
+            schema["additionalProperties"] = value_schema
+            return schema
+
+        if origin in {Union, UnionType}:
+            option_schemas = [
+                AppTool._schema_for_type(arg_type) for arg_type in args if arg_type is not NoneType
+            ]
+            if any(arg_type is NoneType for arg_type in args):
+                option_schemas.append({"type": "null"})
+            if len(option_schemas) == 1:
+                return option_schemas[0]
+            return {"anyOf": option_schemas}
+
+        if origin is Literal:
+            literal_values = list(args)
+            if not literal_values:
+                return {"type": "string"}
+            first_value = literal_values[0]
+            literal_type = type(first_value)
+            base_schema = AppTool._schema_for_type(literal_type)
+            base_schema["enum"] = literal_values
+            return base_schema
+
+        return {"type": "string"}
+
+    @staticmethod
+    def _schema_for_type(type_obj: Any) -> dict[str, Any]:
+        if isinstance(type_obj, type):
+            if type_obj is str:
+                return {"type": "string"}
+            if type_obj is int:
+                return {"type": "integer"}
+            if type_obj is float:
+                return {"type": "number"}
+            if type_obj is bool:
+                return {"type": "boolean"}
+            if type_obj in {dict, object}:
+                return {"type": "object"}
+            if type_obj in {list, tuple, set, frozenset}:
+                return {"type": "array", "items": {"type": "string"}}
+            return {"type": "string"}
+
+        return AppTool._schema_for_argument(
+            AppToolArg(
+                name="tmp",
+                arg_type=str(type_obj),
+                description=None,
+                type_obj=type_obj,
+            )
+        )
+
+    @staticmethod
+    def _is_optional_type(type_obj: Any | None) -> bool:
+        if type_obj is None or isinstance(type_obj, str):
+            return False
+        origin = get_origin(type_obj)
+        if origin in {Union, UnionType}:
+            return any(arg is NoneType for arg in get_args(type_obj))
+        return False
 
 
 class OperationType(Enum):

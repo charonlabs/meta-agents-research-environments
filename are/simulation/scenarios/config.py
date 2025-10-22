@@ -71,6 +71,9 @@ class ScenarioRunnerConfig(BaseModel):
     # URL of the endpoint to contact for running the agent's model
     endpoint: str | None = None
 
+    # JSON string of overrides applied to the agent configuration (e.g., '{"base_agent_config":{"max_iterations":20}}').
+    agent_config_params: str = "{}"
+
     # Maximum number of turns of the conversation between the user and the agent.
     max_turns: int | None = 1
 

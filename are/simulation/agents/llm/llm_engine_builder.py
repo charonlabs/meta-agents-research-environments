@@ -77,12 +77,14 @@ class LLMEngineBuilder(AbstractLLMEngineBuilder):
             "nebius",
             "novita",
             "nscale",
-            "openai",
             "replicate",
             "sambanova",
             "together",
         ]:
             return self._create_hf_provider_engine(engine_config)
+
+        if engine_config.provider == "openai":
+            return self._create_openai_engine(engine_config)
 
         # Fallback to generic LiteLLM engine for unknown providers
         return self._create_generic_litellm_engine(engine_config)
@@ -193,3 +195,12 @@ class LLMEngineBuilder(AbstractLLMEngineBuilder):
             endpoint=engine_config.endpoint,
         )
         return LiteLLMEngine(model_config=model_config)
+
+    def _create_openai_engine(self, engine_config: LLMEngineConfig) -> LLMEngine:
+        """
+        Create an LLM engine for the openai provider.
+        :param engine_config: Configuration for the engine.
+        :returns: An instance of the LLM engine.
+        """
+        from are.simulation.agents.llm.openai.openai_responses_engine import OpenAIResponsesEngine, OpenAIModelConfig
+        return OpenAIResponsesEngine(model_config=OpenAIModelConfig(model_name=engine_config.model_name))
