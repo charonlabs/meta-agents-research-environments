@@ -155,6 +155,12 @@ def validate_main_scenario_sources(**scenario_params):
     default="{}",
     help="JSON string of overrides applied to the agent configuration (e.g., '{\"base_agent_config\":{\"max_iterations\":20}}').",
 )
+@click.option(
+    "--use-api-state",
+    is_flag=True,
+    default=False,
+    help="Use the API state for the model.",
+)
 def main(
     model: str,
     provider: str | None = None,
@@ -180,6 +186,7 @@ def main(
     wait_for_user_input_timeout: float | None = None,
     list_scenarios: bool = False,
     agent_config: str = "{}",
+    use_api_state: bool = False,
 ):
     """
     Main entry point for the Meta Agents Research Environments scenario runner CLI.
@@ -241,6 +248,7 @@ def main(
         tool_augmentation_config=tool_augmentation_config,
         env_events_config=env_events_config,
         enable_caching=False,
+        use_api_state=use_api_state,
     )
 
     # Run scenarios by ID

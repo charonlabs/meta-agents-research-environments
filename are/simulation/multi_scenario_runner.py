@@ -146,6 +146,7 @@ def _create_scenario_runner_config(
         tool_augmentation_config=config.tool_augmentation_config,
         env_events_config=config.env_events_config,
         agent_config_params=config.agent_config_params,
+        use_api_state=config.use_api_state,
     )
     if scenario.nb_turns is not None:
         runner_config.max_turns = scenario.nb_turns

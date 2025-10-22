@@ -147,6 +147,7 @@ class AgentBuilder(AbstractAgentBuilder):
                             conditional_pre_steps=[get_are_simulation_update_pre_step()],
                             use_custom_logger=agent_config.base_agent_config.use_custom_logger,
                             update_system_prompt_tools=lambda x, y: x,
+                            use_api_state=agent_config.base_agent_config.use_api_state,
                         ),
                         time_manager=env.time_manager,
                         max_turns=agent_config.max_turns,

@@ -34,6 +34,7 @@ class ARESimulationBaseAgentConfig(BaseModel):
 class ARESimulationReactBaseAgentConfig(ARESimulationBaseAgentConfig):
     system_prompt: str = Field(default="")
     max_iterations: int = Field(default=80)
+    use_api_state: bool = Field(default=False)
 
 
 class RunnableARESimulationAgentConfig(ABC):

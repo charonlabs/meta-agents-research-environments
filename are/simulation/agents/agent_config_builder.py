@@ -44,6 +44,7 @@ class AgentConfigBuilder(AbstractAgentConfigBuilder):
     def build(
         self,
         agent_name: str,
+        use_api_state: bool = False,
     ) -> RunnableARESimulationAgentConfig:
         match agent_name:
             case "default":
@@ -64,6 +65,7 @@ class AgentConfigBuilder(AbstractAgentConfigBuilder):
                             RESPONSES_SYSTEM_PROMPT
                         ),
                         max_iterations=2,
+                        use_api_state=use_api_state,
                     ),
                 )
 

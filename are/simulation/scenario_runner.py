@@ -223,6 +223,7 @@ class ScenarioRunner:
         endpoint: str | None = None,
         max_turns: int | None = None,
         agent_config_params: str = "{}",
+        use_api_state: bool = False,
         simulated_generation_time_mode: str = "measured",
         use_custom_logger: bool = True,
     ) -> ScenarioValidationResult:
@@ -305,6 +306,7 @@ class ScenarioRunner:
                     config.endpoint,
                     config.max_turns,
                     config.agent_config_params,
+                    config.use_api_state,
                     config.simulated_generation_time_mode,
                     config.use_custom_logger,
                 )

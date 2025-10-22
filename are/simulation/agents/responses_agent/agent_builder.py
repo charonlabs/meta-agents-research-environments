@@ -3,6 +3,7 @@ import json
 import random
 from typing import Any
 import time
+import uuid
 
 from openai.types.responses import Response
 from openai.resources.responses.responses import _make_tools as make_responses_tools
@@ -58,6 +59,8 @@ class ResponsesBaseAgent(BaseAgent):
             kwargs["action_executor"] = ResponsesActionExecutor()
         assert isinstance(kwargs["action_executor"], ResponsesActionExecutor), "action_executor must be an instance of ResponsesActionExecutor"
         self.oai_tools: list[dict[str, Any]] = []
+        self.previous_response_id: str | None = None
+        self.use_api_state = kwargs.get("use_api_state", False)
         super().__init__(**kwargs)
 
     def init_tools(self):
@@ -73,7 +76,7 @@ class ResponsesBaseAgent(BaseAgent):
         return tool_values
 
     def build_history_from_logs(
-        self, exclude_log_types: list[str] = []
+        self, exclude_log_types: list[str] = [], until_last_assistant: bool = False
     ) -> list[dict[str, Any]]:
         """
         Build the history of messages from the logs, ensuring a specific order of steps.
@@ -82,12 +85,22 @@ class ResponsesBaseAgent(BaseAgent):
         """
         history = []
         id_output_step = 0
+        last_assistant_log_id = 0
+
+        if until_last_assistant:
+            for i, log in enumerate(reversed(self.logs)):
+                if log.get_type() == "tool_call":
+                    last_assistant_log_id = len(self.logs) - i - 1
+                    break
 
         for i, log in enumerate(self.logs):
             role = log.get_type()
             timestamp = log.timestamp
             if role in ["observation", "error"]:
                 id_output_step += 1
+
+            if role in exclude_log_types or i < last_assistant_log_id:
+                continue
 
             if isinstance(log, ErrorLog) and log.error == "MaxIterationsAgentError":
                 continue
@@ -209,9 +222,14 @@ class ResponsesBaseAgent(BaseAgent):
         The errors are raised here, they are caught and logged in the run() method.
         """
         # 1. Build the history messages from the logs to prompt the LLM
-        agent_memory = self.build_history_from_logs(
-            exclude_log_types=["thought", "action"]
-        )
+        if not self.use_api_state:
+            agent_memory = self.build_history_from_logs(
+                exclude_log_types=["thought", "action"]
+            )
+        else:
+            agent_memory = self.build_history_from_logs(
+                exclude_log_types=["thought", "action", "rationale"], until_last_assistant=True
+            )
         prompt = agent_memory.copy()
 
         self.append_agent_log(
@@ -259,8 +277,11 @@ class ResponsesBaseAgent(BaseAgent):
                     additional_trace_tags=["action"],
                     schema=self.decoding_schema,
                     tools=self.oai_tools,
+                    previous_response_id=self.previous_response_id,
                 )
                 assert isinstance(llm_response, Response), "llm_response must be an instance of Response"
+                if self.use_api_state:
+                    self.previous_response_id = llm_response.id
                 llm_output = "\n".join([str(item.model_dump()) for item in llm_response.output if not item.type == "reasoning"])
                 metadata = llm_response.usage.model_dump() if llm_response.usage is not None else {}
                 format_try_count += 1

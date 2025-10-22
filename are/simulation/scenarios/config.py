@@ -41,6 +41,9 @@ class ScenarioRunnerConfig(BaseModel):
     # Optional model provider to use(default: "huggingface")
     model_provider: str | None = DEFAULT_PROVIDER
 
+    # Flag indicating whether to use the API state for the model (default: False)
+    use_api_state: bool = False
+
     # Optional agent to use for running the scenarios(default: None)
     agent: str | None = None
 

@@ -6,7 +6,7 @@ from langsmith.wrappers import wrap_openai
 from litellm import completion
 from litellm.exceptions import APIError, AuthenticationError
 from litellm.types.utils import Choices, ModelResponse
-from openai.types.responses import Response
+from openai.types.responses import Response, ResponseIncludable
 from pydantic import BaseModel
 from openai import OpenAI
 
@@ -60,14 +60,18 @@ Action:
             if len(tools) == 0:
                 raise ValueError("No tools provided")
 
+            previous_response_id = kwargs.get("previous_response_id", None)
+            include: list[ResponseIncludable] = ["reasoning.encrypted_content"] if previous_response_id is None else []
+
             response = self.client.responses.create(
                 model=self.model_config.model_name,
                 input=messages, # type: ignore
                 tools=tools,
                 tool_choice="required",
-                include=["reasoning.encrypted_content"],
+                include=include,
                 parallel_tool_calls=False,
                 reasoning={"summary": "detailed", "effort": self.model_config.reasoning_effort}, # type: ignore
+                previous_response_id=previous_response_id,
             )
 
             return response
