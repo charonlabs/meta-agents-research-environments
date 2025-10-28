@@ -28,6 +28,7 @@ files = ["requirements.txt"]
 
 [tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
 dev = ["requirements-dev.txt"]
+gui = ["requirements-gui.txt"]
 
 
 [tool.hatch.build.targets.wheel]
@@ -35,10 +36,10 @@ only-include = ["are"]
 sources = {"are" = "are"}
 exclude = [
     "are/simulation/gui/client/node_modules/**",
-    "are/simulation/gui/client/src/**", 
+    "are/simulation/gui/client/src/**",
     "are/simulation/gui/client/.vite/**",
     "are/simulation/gui/client/*.json",
-    "are/simulation/gui/client/*.js", 
+    "are/simulation/gui/client/*.js",
     "are/simulation/gui/client/*.ts",
     "are/simulation/gui/client/index.html",
     "are/simulation/datasets/**",

@@ -1,37 +1,86 @@
+# Core dependencies for basic benchmark functionality
+
+# CLI framework
+# Used in: simulation/benchmark/cli.py, simulation/main.py, simulation/gui/cli.py, simulation/cli/*.py
 click==8.1.8
+
+# HuggingFace dataset loading and handling
+# Used in: simulation/benchmark/huggingface_loader.py, simulation/benchmark/hf_upload_utils.py, simulation/data_handler/importer.py
 datasets==4.0.0
-deepdiff>=8.6.1
+
+# Tool schema generation from docstrings
+# Used in: simulation/tool_utils.py
 docstring-parser==0.16
-fastapi==0.116.1
+
+# Filesystem abstraction for sandbox and scenario loading
+# Used in: simulation/apps/sandbox_file_system.py, simulation/benchmark/scenario_loader.py, simulation/scenarios/utils/load_utils.py
 fsspec==2024.12.0
-geographiclib==2.0
+
+# HuggingFace Hub API for LLM models
+# Used in: simulation/agents/llm/hf/hf_engine.py, simulation/benchmark/hf_upload_utils.py
 huggingface-hub==0.33.4
+
+# CLI interactive input mode
+# Used in: simulation/apps/agent_user_interface.py
 inputimeout==1.0.4
+
+# Template rendering for prompts and personalization
+# Used in: simulation/tool_box.py, simulation/scenarios/utils/personalization/utils.py
 Jinja2==3.1.6
-joblib==1.4.2
+
+# LLM abstraction layer for multiple providers
+# Used in: simulation/agents/llm/litellm/litellm_engine.py
 litellm==1.71.1
-mammoth==1.8.0
-markdownify==0.14.1
+
+# Model Context Protocol for tool integration
+# Used in: simulation/apps/mcp/mcp_app.py, simulation/apps/mcp/server/are_simulation_mcp_server.py
 mcp[cli]==1.11.0
-mysql-connector-python==9.2.0
+
+# Numerical operations for benchmark stats and scenario expansion
+# Used in: simulation/benchmark/report_stats.py, simulation/scenarios/utils/scenario_expander.py
 numpy==2.2.6
-pandas==2.2.3
-pathvalidate==3.2.1
-pdfminer.six==20231228
-phonenumbers==8.13.53
+
+# Image processing for multimodal agents
+# Used in: simulation/agents/multimodal.py
 pillow==11.1.0
+
+# Data processing for benchmark statistics and reporting
+# Used in: simulation/benchmark/report_stats.py, simulation/scenarios/validation_result.py
 polars-lts-cpu==1.33.1
-puremagic==1.27
+
+# Data validation and type checking throughout codebase
+# Used in: simulation/agents/*.py, simulation/apps/mcp/*.py, simulation/data_handler/models.py
 pydantic==2.10.6
-pypdf==6.0.0
+
+# Environment variable loading
+# Used in: simulation/config.py, simulation/scenarios/scenario_hf_demo_mcp/scenario.py, simulation/scenarios/utils/caching.py
 python-dotenv==1.0.1
-python-pptx==1.0.2
+
+# Fuzzy search in messaging app
+# Used in: simulation/apps/messaging_v2.py
 rapidfuzz==3.12.1
-retry==0.9.2
-s3fs==2024.12.0
-starlette==0.47.2
-strawberry-graphql==0.275.5
+
+# Terminal colors for logging and debugging
+# Used in: simulation/environment.py, simulation/apps/agent_user_interface.py, simulation/tool_utils.py
 termcolor==2.5.0
-tqdm_joblib==0.0.4
-uvicorn==0.35.0
-wsproto==1.2.0
+
+# Document conversion dependencies
+# All used in: simulation/core/mdconvert.py
+
+# Document conversion - DOCX to HTML/Markdown
+mammoth==1.8.0
+
+# HTML to Markdown conversion
+markdownify==0.14.1
+
+# Excel/spreadsheet processing in document conversion
+pandas==2.2.3
+
+# PDF text extraction for document conversion
+pdfminer.six==20231228
+
+# File type detection for document conversion
+puremagic==1.27
+
+# PowerPoint processing for document conversion
+python-pptx==1.0.2

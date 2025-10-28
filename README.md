@@ -64,15 +64,20 @@ All the commands in this README and the documentation are available through `uvx
 
 ### Traditional Installation
 
-Alternatively, install the package directly:
+Alternatively, install the package directly with different dependency sets:
 
 ```bash
-# With uv (recommended)
-uv pip install meta-agents-research-environments
-
-# With pip
+# Minimal install (core dependencies only)
+# Good for basic benchmarking and running most scenarios
 pip install meta-agents-research-environments
+
+# With GUI (recommended for interactive exploration)
+pip install "meta-agents-research-environments[gui]"
 ```
+
+**Which installation should I choose?**
+- **Minimal** (`meta-agents-research-environments`): For running benchmarks and scenarios via CLI
+- **With GUI** (`[gui]`): Adds web interface for interactive exploration (recommended for local development)
 
 ## Usage
 
