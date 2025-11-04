@@ -202,5 +202,8 @@ class LLMEngineBuilder(AbstractLLMEngineBuilder):
         :param engine_config: Configuration for the engine.
         :returns: An instance of the LLM engine.
         """
-        from are.simulation.agents.llm.openai.openai_responses_engine import OpenAIResponsesEngine, OpenAIModelConfig
+        from are.simulation.agents.llm.openai.openai_responses_engine import (
+            OpenAIModelConfig,
+            OpenAIResponsesEngine,
+        )
         return OpenAIResponsesEngine(model_config=OpenAIModelConfig(model_name=engine_config.model_name))

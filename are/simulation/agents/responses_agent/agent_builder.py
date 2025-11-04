@@ -1,20 +1,36 @@
-from collections import defaultdict
 import json
 import random
-from typing import Any
 import time
-import uuid
+from datetime import datetime, timezone
+from typing import Any
 
 from openai.types.responses import Response
-from openai.resources.responses.responses import _make_tools as make_responses_tools
-from are.simulation.agents.agent_log import ErrorLog, LLMInputLog, LLMOutputThoughtActionLog, ObservationLog, SystemPromptLog, TaskLog, ThoughtLog, ToolCallLog, RationaleLog
-from are.simulation.agents.default_agent.base_agent import BaseAgent, convert_plan_fact_messages_to_user, get_offset_from_time_config_mode
-from are.simulation.agents.llm.openai.openai_responses_engine import OpenAIResponsesEngine, OpenAIModelConfig
-from are.simulation.agents.default_agent.tools.responses_action_executor import ResponsesActionExecutor
 
-from datetime import datetime, timezone
-
+from are.simulation.agents.agent_log import (
+    ErrorLog,
+    LLMInputLog,
+    LLMOutputThoughtActionLog,
+    ObservationLog,
+    RationaleLog,
+    SystemPromptLog,
+    TaskLog,
+    ThoughtLog,
+    ToolCallLog,
+)
+from are.simulation.agents.default_agent.base_agent import (
+    BaseAgent,
+    convert_plan_fact_messages_to_user,
+    get_offset_from_time_config_mode,
+)
+from are.simulation.agents.default_agent.tools.responses_action_executor import (
+    ResponsesActionExecutor,
+)
+from are.simulation.agents.llm.openai.openai_responses_engine import (
+    OpenAIModelConfig,
+    OpenAIResponsesEngine,
+)
 from are.simulation.exceptions import InvalidActionAgentError
+
 
 def format_message(
     message_dict: dict[str, Any],
@@ -60,7 +76,7 @@ class ResponsesBaseAgent(BaseAgent):
         assert isinstance(kwargs["action_executor"], ResponsesActionExecutor), "action_executor must be an instance of ResponsesActionExecutor"
         self.oai_tools: list[dict[str, Any]] = []
         self.previous_response_id: str | None = None
-        self.use_api_state = kwargs.get("use_api_state", False)
+        self.use_api_state = kwargs.pop("use_api_state", False)
         super().__init__(**kwargs)
 
     def init_tools(self):
@@ -86,6 +102,7 @@ class ResponsesBaseAgent(BaseAgent):
         history = []
         id_output_step = 0
         last_assistant_log_id = 0
+        last_tc_id = 0
 
         if until_last_assistant:
             for i, log in enumerate(reversed(self.logs)):
@@ -163,7 +180,15 @@ class ResponsesBaseAgent(BaseAgent):
                 }
                 history.append(obs)
                 continue
+            elif isinstance(log, ErrorLog):
+                history.append({
+                    "type": "function_call_output",
+                    "call_id": last_tc_id,
+                    "output": log.get_content_for_llm()
+                })
+                continue
             elif isinstance(log, ToolCallLog):
+                last_tc_id = log.call_id
                 history.append(log.raw_tool_call)
                 continue
             elif isinstance(log, RationaleLog):

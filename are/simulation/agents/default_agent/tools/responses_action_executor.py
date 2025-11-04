@@ -5,10 +5,9 @@
 # the root directory of this source tree.
 
 
-from dataclasses import dataclass
 import json
 import pprint
-import re
+from dataclasses import dataclass
 from typing import Any, Callable
 
 from openai.types.responses import Response
@@ -31,6 +30,7 @@ from are.simulation.tool_box import get_tool_description_with_args
 from are.simulation.tools import Tool
 
 from .action_executor import AgentAction, BaseActionExecutor, ParsedAction
+
 
 @dataclass
 class ResponsesAction:

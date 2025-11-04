@@ -99,6 +99,14 @@ shutdown_event = threading.Event()
     required=False,
     help="Path to the dataset directory containing JSON scenario files organized in subfolders",
 )
+@click.option(
+    "-ts",
+    "--termination-step",
+    type=click.Choice(["gaia2", "notif", "empty"]),
+    required=False,
+    default="gaia2",
+    help="Termination step to use for the agent",
+)
 def main(
     model: str,
     provider: str | None = None,
@@ -117,6 +125,7 @@ def main(
     inactivity_limit: int = 3600,
     cleanup_interval: int = 300,
     dataset_path: str | None = None,
+    termination_step: str = "gaia2",
 ):
     """
     Main entry point for the Meta Agents Research Environments GUI server CLI.
@@ -153,6 +162,7 @@ def main(
         model=model,
         provider=provider,
         endpoint=endpoint,
+        termination_step=termination_step,
         default_ui_view=ui_view,
         inactivity_limit=inactivity_limit,
         cleanup_interval=cleanup_interval,
@@ -222,7 +232,6 @@ def main(
         server.run()
     except KeyboardInterrupt:
         clean_exit()
-
 
 # To run in Conda environment, use e.g., `python -m are.simulation.gui.cli -s scenario_find_image_file`
 if __name__ == "__main__":

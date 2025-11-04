@@ -14,14 +14,12 @@ from are.simulation.agents.are_simulation_agent_config import (
     RunnableARESimulationAgentConfig,
 )
 from are.simulation.agents.default_agent.app_agent import AppAgent
-from are.simulation.agents.default_agent.base_agent import update_system_prompt_with_tools
+from are.simulation.agents.default_agent.utils.logging_utils import (
+    get_default_logger,
+)
 from are.simulation.agents.llm.llm_engine_builder import LLMEngineBuilder
 from are.simulation.apps import App
 from are.simulation.environment import Environment
-from are.simulation.agents.default_agent.utils.logging_utils import (
-    get_default_logger,
-    get_parent_logger,
-)
 
 
 class AbstractAgentBuilder(ABC):
@@ -92,6 +90,7 @@ class AgentBuilder(AbstractAgentBuilder):
                         base_agent=are_simulation_react_json_agent(
                             llm_engine=llm_engine,
                             base_agent_config=agent_config.base_agent_config,
+                            termination_step=get_termination_step(agent_config.get_base_agent_config().termination_step),
                         ),
                         time_manager=env.time_manager,
                         max_turns=agent_config.max_turns,
@@ -106,15 +105,18 @@ class AgentBuilder(AbstractAgentBuilder):
                         f"Agent {agent_config.get_agent_name()} requires a ARESimulationReactBaseAgentConfig"
                     )
             case "responses":
-                from are.simulation.agents.responses_agent.agent_builder import (
-                    ResponsesBaseAgent,
-                )
                 from are.simulation.agents.default_agent.are_simulation_main import (
                     ARESimulationAgent,
                 )
-                from are.simulation.agents.default_agent.termination_methods.are_simulation import get_gaia2_termination_step
-                from are.simulation.agents.default_agent.tools.responses_action_executor import ResponsesActionExecutor
-                from are.simulation.agents.default_agent.steps.are_simulation import get_are_simulation_update_pre_step
+                from are.simulation.agents.default_agent.steps.are_simulation import (
+                    get_are_simulation_update_pre_step,
+                )
+                from are.simulation.agents.default_agent.tools.responses_action_executor import (
+                    ResponsesActionExecutor,
+                )
+                from are.simulation.agents.responses_agent.agent_builder import (
+                    ResponsesBaseAgent,
+                )
 
                 assert env is not None, "Environment must be provided"
                 assert env.time_manager is not None, "Time manager must be provided"
@@ -139,7 +141,7 @@ class AgentBuilder(AbstractAgentBuilder):
                             system_prompts={
                                 "system_prompt": str(agent_config.base_agent_config.system_prompt),
                             },
-                            termination_step=get_gaia2_termination_step(),
+                            termination_step=get_termination_step(agent_config.get_base_agent_config().termination_step),
                             max_iterations=agent_config.base_agent_config.max_iterations,
                             action_executor=ResponsesActionExecutor(
                                 use_custom_logger=agent_config.base_agent_config.use_custom_logger
@@ -164,6 +166,20 @@ class AgentBuilder(AbstractAgentBuilder):
             case _:
                 raise ValueError(f"Agent {agent_config.get_agent_name()} not found")
 
+def get_termination_step(termination_step: str):
+    from are.simulation.agents.default_agent.termination_methods.are_simulation import (
+        get_gaia2_termination_step,
+        get_wait_for_notification_termination_step,
+        get_empty_termination_step,
+    )
+    if termination_step == "gaia2":
+        return get_gaia2_termination_step()
+    elif termination_step == "notif":
+        return get_wait_for_notification_termination_step()
+    elif termination_step == "empty":
+        return get_empty_termination_step()
+    else:
+        raise ValueError(f"Invalid termination step: {termination_step}")
 
 class AbstractAppAgentBuilder(ABC):
     """

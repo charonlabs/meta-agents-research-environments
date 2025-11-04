@@ -7,6 +7,9 @@
 
 import base64
 
+from are.simulation.agents.are_simulation_agent_config import LLMEngineConfig
+from are.simulation.agents.llm.llm_engine_builder import LLMEngineBuilder
+from are.simulation.agents.user_proxy import UserProxyResponses
 from are.simulation.apps.agent_user_interface import AgentUserInterface
 from are.simulation.apps.calendar import CalendarApp
 from are.simulation.apps.contacts import Contact, ContactsApp, Gender, Status
@@ -26,11 +29,21 @@ from are.simulation.types import Action, EventRegisterer, EventType
 class ScenarioTutorial(Scenario):
     # Define the start time and duration of the scenario
     start_time: float | None = 0
-    duration: float | None = 20  # Scenario duration in seconds
+    duration: float | None = 2000  # Scenario duration in seconds
 
     # Initialize and populate applications with data
     def init_and_populate_apps(self, *args, **kwargs) -> None:
-        agui = AgentUserInterface()  # User interface for the agent
+
+
+        llm_engine_builder = LLMEngineBuilder()
+        user_proxy_llm_engine = llm_engine_builder.create_engine(
+            engine_config=LLMEngineConfig(
+                model_name="gpt-4o",
+                provider="openai",
+            )
+        )
+        user_proxy = UserProxyResponses(llm=user_proxy_llm_engine)
+        agui = AgentUserInterface(user_proxy=user_proxy)  # User interface for the agent
         calendar = CalendarApp()  # Calendar application
         email_client = EmailClientApp()  # Email client application
         contacts = ContactsApp()  # Contacts application
@@ -97,6 +110,8 @@ class ScenarioTutorial(Scenario):
             event2 = aui.send_message_to_agent(
                 content="Hey Assistant, can you take care of transferring the pdf Greg will send me to John? You can send it right away to John Doe.",
             ).depends_on(event1, delay_seconds=1)
+
+            aui.user_proxy.history.append({"role": "assistant", "content": "Hey Assistant, can you take care of transferring the pdf Greg will send me to John? You can send it right away to John Doe."}) # type: ignore
 
             # Define action3: Simulate receiving a message from Greg
             # Event3 depends on event2 and is scheduled 10 seconds after event2.

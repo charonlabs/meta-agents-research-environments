@@ -29,12 +29,14 @@ class ARESimulationBaseAgentConfig(BaseModel):
         default=None
     )
     use_custom_logger: bool = Field(default=True)
+    termination_step: str = Field(default="gaia2")
 
 
 class ARESimulationReactBaseAgentConfig(ARESimulationBaseAgentConfig):
     system_prompt: str = Field(default="")
     max_iterations: int = Field(default=80)
     use_api_state: bool = Field(default=False)
+    
 
 
 class RunnableARESimulationAgentConfig(ABC):

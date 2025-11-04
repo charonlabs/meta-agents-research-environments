@@ -13,7 +13,9 @@ from are.simulation.agents.default_agent.base_agent import RunningState, Termina
 from are.simulation.agents.default_agent.tools.json_action_executor import (
     JsonActionExecutor,
 )
-from are.simulation.agents.default_agent.tools.responses_action_executor import ResponsesActionExecutor
+from are.simulation.agents.default_agent.tools.responses_action_executor import (
+    ResponsesActionExecutor,
+)
 from are.simulation.exceptions import MaxIterationsAgentError
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -132,9 +134,29 @@ termination_condition_are_simulation_send_message_to_user_or_wait_for_notificati
     ],
 )
 
+termination_condition_are_simulation_wait_for_notification = partial(
+    termination_condition_are_simulation,
+    termination_tool_names=[
+        "SystemApp__wait_for_notification",
+    ],
+)
+
 
 def get_gaia2_termination_step() -> TerminationStep:
     return TerminationStep(
         name="end_scenario",
         condition=termination_condition_are_simulation_send_message_to_user_or_wait_for_notification,
+    )
+
+
+def get_wait_for_notification_termination_step() -> TerminationStep:
+    return TerminationStep(
+        name="end_scenario",
+        condition=termination_condition_are_simulation_wait_for_notification,
+    )
+
+def get_empty_termination_step() -> TerminationStep:
+    return TerminationStep(
+        name="end_scenario",
+        condition=lambda agent: False,
     )

@@ -9,7 +9,7 @@ from are.simulation.agents.are_simulation_agent_config import (
     ARESimulationReactAppAgentConfig,
     ARESimulationReactBaseAgentConfig,
 )
-from are.simulation.agents.default_agent.base_agent import BaseAgent
+from are.simulation.agents.default_agent.base_agent import BaseAgent, TerminationStep
 from are.simulation.agents.default_agent.steps.are_simulation import (
     get_are_simulation_update_pre_step,
 )
@@ -24,7 +24,7 @@ from are.simulation.agents.llm.llm_engine import LLMEngine
 
 
 def are_simulation_react_json_agent(
-    llm_engine: LLMEngine, base_agent_config: ARESimulationReactBaseAgentConfig
+    llm_engine: LLMEngine, base_agent_config: ARESimulationReactBaseAgentConfig, termination_step: TerminationStep = get_gaia2_termination_step()
 ):
     return BaseAgent(
         llm_engine=llm_engine,
@@ -32,7 +32,7 @@ def are_simulation_react_json_agent(
         system_prompts={
             "system_prompt": str(base_agent_config.system_prompt),
         },
-        termination_step=get_gaia2_termination_step(),
+        termination_step=termination_step,
         max_iterations=base_agent_config.max_iterations,
         action_executor=JsonActionExecutor(
             use_custom_logger=base_agent_config.use_custom_logger

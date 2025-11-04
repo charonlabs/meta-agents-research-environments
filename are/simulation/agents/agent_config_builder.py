@@ -12,6 +12,7 @@ from are.simulation.agents.are_simulation_agent_config import (
     ARESimulationReactAgentConfig,
     ARESimulationReactAppAgentConfig,
     ARESimulationReactBaseAgentConfig,
+    LLMEngineConfig,
     RunnableARESimulationAgentConfig,
 )
 from are.simulation.agents.default_agent.prompts import (
@@ -66,6 +67,11 @@ class AgentConfigBuilder(AbstractAgentConfigBuilder):
                         ),
                         max_iterations=2,
                         use_api_state=use_api_state,
+                        llm_engine_config=LLMEngineConfig(
+                            model_name="gpt-5-mini",
+                            provider="openai",
+                            
+                        )
                     ),
                 )
 

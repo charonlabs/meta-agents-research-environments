@@ -1,18 +1,14 @@
 import logging
-from typing import Any
 import os
+from typing import Any
 
 from langsmith.wrappers import wrap_openai
-from litellm import completion
 from litellm.exceptions import APIError, AuthenticationError
-from litellm.types.utils import Choices, ModelResponse
+from openai import OpenAI
 from openai.types.responses import Response, ResponseIncludable
 from pydantic import BaseModel
-from openai import OpenAI
 
 from are.simulation.agents.llm.llm_engine import LLMEngine, LLMEngineException
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,20 +53,22 @@ Action:
     ) -> Response:
         try:
             tools = kwargs.get("tools", [])
+            tool_choice = kwargs.get("tool_choice", "required")
             if len(tools) == 0:
-                raise ValueError("No tools provided")
+                tool_choice = "auto"
 
             previous_response_id = kwargs.get("previous_response_id", None)
-            include: list[ResponseIncludable] = ["reasoning.encrypted_content"] if previous_response_id is None else []
+            include: list[ResponseIncludable] = ["reasoning.encrypted_content"] if (previous_response_id is None and not self.model_config.model_name.startswith("gpt-4")) else []
+            reasoning = {"summary": "detailed", "effort": self.model_config.reasoning_effort} if not self.model_config.model_name.startswith("gpt-4") else None
 
             response = self.client.responses.create(
                 model=self.model_config.model_name,
                 input=messages, # type: ignore
                 tools=tools,
-                tool_choice="required",
+                tool_choice=tool_choice,
                 include=include,
                 parallel_tool_calls=False,
-                reasoning={"summary": "detailed", "effort": self.model_config.reasoning_effort}, # type: ignore
+                reasoning=reasoning, # type: ignore
                 previous_response_id=previous_response_id,
             )
 

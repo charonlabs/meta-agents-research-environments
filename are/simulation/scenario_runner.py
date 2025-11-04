@@ -5,7 +5,6 @@
 # the root directory of this source tree.
 
 
-import json
 import logging
 import random
 import time
