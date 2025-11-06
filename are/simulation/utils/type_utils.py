@@ -6,9 +6,10 @@
 
 
 import inspect
+from enum import Enum
 from functools import wraps
 from types import NoneType, UnionType
-from typing import Any, Union, get_args, get_origin, get_type_hints
+from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
 
 def is_optional_type(t: Any) -> bool:
@@ -28,7 +29,8 @@ def check_type(value, expected_type):
     Check if a value matches the expected type, with support for complex types.
 
     This function supports checking against Union types, container types like
-    list, set, dict, and tuple, and handles Any type as always matching.
+    list, set, dict, and tuple, Literal types, Enum types, and handles Any type
+    as always matching.
 
     :param value: The value to check
     :param expected_type: The expected type
@@ -38,6 +40,11 @@ def check_type(value, expected_type):
         return True
     origin = get_origin(expected_type)
     expected_args = get_args(expected_type)
+    
+    # Handle Literal types
+    if origin is Literal:
+        return value in expected_args
+    
     if origin in {Union, UnionType}:
         # Optionals are handled here as well.
         return any(check_type(value, t) for t in expected_args)
@@ -60,6 +67,11 @@ def check_type(value, expected_type):
                     check_type(v, t) for v, t in zip(value, get_args(expected_type))
                 )
             )
+    
+    # Handle Enum types - check if value matches any enum value
+    if isinstance(expected_type, type) and issubclass(expected_type, Enum):
+        return value in [e.value for e in expected_type]
+    
     return isinstance(value, expected_type)
 
 

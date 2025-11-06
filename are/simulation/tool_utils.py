@@ -384,6 +384,9 @@ class AppTool:
             base_schema["enum"] = literal_values
             return base_schema
 
+        if origin is Enum:
+            return {"type": "string", "enum": [e.value for e in type_obj]}
+
         return {"type": "string"}
 
     @staticmethod
