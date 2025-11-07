@@ -21,6 +21,7 @@ class LLMEngineConfig(BaseModel):
     )
     provider: str | None = None
     endpoint: str | None = None
+    api_key_var: str | None = None
 
 
 class ARESimulationBaseAgentConfig(BaseModel):

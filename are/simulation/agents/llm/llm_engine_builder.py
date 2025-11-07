@@ -86,6 +86,9 @@ class LLMEngineBuilder(AbstractLLMEngineBuilder):
         if engine_config.provider == "openai":
             return self._create_openai_engine(engine_config)
 
+        if engine_config.provider == "completions-api":
+            return self._create_openai_completions_engine(engine_config)
+
         # Fallback to generic LiteLLM engine for unknown providers
         return self._create_generic_litellm_engine(engine_config)
 
@@ -207,3 +210,26 @@ class LLMEngineBuilder(AbstractLLMEngineBuilder):
             OpenAIResponsesEngine,
         )
         return OpenAIResponsesEngine(model_config=OpenAIModelConfig(model_name=engine_config.model_name))
+
+    def _create_openai_completions_engine(self, engine_config: LLMEngineConfig) -> LLMEngine:
+        """
+        Create an LLM engine for the OpenAI Completions SDK.
+        :param engine_config: Configuration for the engine.
+        :returns: An instance of the LLM engine.
+        """
+        from are.simulation.agents.llm.openai.openai_completions_engine import (
+            OpenAICompletionsEngine,
+            OpenAIModelConfig,
+        )
+        if engine_config.api_key_var is None:
+            raise ValueError("api_key_var must be set in engine_config to use OpenAI Completions SDK")
+        api_key = os.getenv(engine_config.api_key_var, None)
+        if api_key is None:
+            raise EnvironmentError(f"{engine_config.api_key_var} must be set in the environment")
+        
+        return OpenAICompletionsEngine(model_config=OpenAIModelConfig(
+            model_name=engine_config.model_name,
+            provider=engine_config.provider,
+            endpoint=engine_config.endpoint,
+            api_key=api_key,
+        ))

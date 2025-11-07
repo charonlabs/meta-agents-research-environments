@@ -55,7 +55,7 @@ class AgentBuilder(AbstractAgentBuilder):
         self.llm_engine_builder = llm_engine_builder or LLMEngineBuilder()
 
     def list_agents(self) -> list[str]:
-        return ["default", "responses"]
+        return ["default", "responses", "completions"]
 
     def build(
         self,
@@ -104,6 +104,62 @@ class AgentBuilder(AbstractAgentBuilder):
                     raise ValueError(
                         f"Agent {agent_config.get_agent_name()} requires a ARESimulationReactBaseAgentConfig"
                     )
+            case "completions":
+                from are.simulation.agents.completions_agent.agent_factory import (
+                    CompletionsBaseAgent,
+                )
+                from are.simulation.agents.default_agent.are_simulation_main import (
+                    ARESimulationAgent,
+                )
+                from are.simulation.agents.default_agent.steps.are_simulation import (
+                    get_are_simulation_update_pre_step,
+                )
+                from are.simulation.agents.default_agent.tools.completions_action_executor import (
+                    CompletionsActionExecutor,
+                )
+
+                assert env is not None, "Environment must be provided"
+                assert env.time_manager is not None, "Time manager must be provided"
+                assert env.append_to_world_logs is not None, (
+                    "Log callback must be provided"
+                )
+
+                llm_engine = self.llm_engine_builder.create_engine(
+                    engine_config=agent_config.get_base_agent_config().llm_engine_config,
+                    mock_responses=mock_responses,
+                )
+
+                if isinstance(agent_config, ARESimulationReactAgentConfig):
+                    return ARESimulationAgent(
+                        log_callback=env.append_to_world_logs,
+                        llm_engine=llm_engine,
+                        base_agent=CompletionsBaseAgent(
+                            llm_engine=llm_engine,
+                            tools={},
+                            system_prompts={
+                                "system_prompt": str(agent_config.base_agent_config.system_prompt),
+                            },
+                            termination_step=get_termination_step(agent_config.get_base_agent_config().termination_step),
+                            max_iterations=agent_config.base_agent_config.max_iterations,
+                            action_executor=CompletionsActionExecutor(
+                                use_custom_logger=agent_config.base_agent_config.use_custom_logger
+                            ),
+                            conditional_pre_steps=[get_are_simulation_update_pre_step()],
+                            use_custom_logger=agent_config.base_agent_config.use_custom_logger,
+                            update_system_prompt_tools=lambda x, y: x,
+                        ),
+                        time_manager=env.time_manager,
+                        max_turns=agent_config.max_turns,
+                        pause_env=env.pause,
+                        resume_env=env.resume_with_offset,
+                        simulated_generation_time_config=(
+                            agent_config.get_base_agent_config().simulated_generation_time_config
+                        ),
+                    )
+                else:
+                    raise ValueError(
+                        f"Agent {agent_config.get_agent_name()} requires a ARESimulationReactBaseAgentConfig"
+                    )
             case "responses":
                 from are.simulation.agents.default_agent.are_simulation_main import (
                     ARESimulationAgent,
@@ -114,7 +170,7 @@ class AgentBuilder(AbstractAgentBuilder):
                 from are.simulation.agents.default_agent.tools.responses_action_executor import (
                     ResponsesActionExecutor,
                 )
-                from are.simulation.agents.responses_agent.agent_builder import (
+                from are.simulation.agents.responses_agent.agent_factory import (
                     ResponsesBaseAgent,
                 )
 
@@ -123,8 +179,6 @@ class AgentBuilder(AbstractAgentBuilder):
                 assert env.append_to_world_logs is not None, (
                     "Log callback must be provided"
                 )
-
-                logger = get_default_logger(__name__)
 
                 llm_engine = self.llm_engine_builder.create_engine(
                     engine_config=agent_config.get_base_agent_config().llm_engine_config,
@@ -168,9 +222,9 @@ class AgentBuilder(AbstractAgentBuilder):
 
 def get_termination_step(termination_step: str):
     from are.simulation.agents.default_agent.termination_methods.are_simulation import (
+        get_empty_termination_step,
         get_gaia2_termination_step,
         get_wait_for_notification_termination_step,
-        get_empty_termination_step,
     )
     if termination_step == "gaia2":
         return get_gaia2_termination_step()

@@ -13,11 +13,11 @@ from are.simulation.agents.llm.llm_engine import LLMEngine, LLMEngineException
 logger = logging.getLogger(__name__)
 
 class OpenAIModelConfig(BaseModel):
-    model_name: str
-    provider: str = "local"
-    endpoint: str = "https://api.openai.com/v1"
+    model_name: str = "gpt-5-mini"
+    provider: str | None = "local"
+    endpoint: str | None = "https://api.openai.com/v1"
     api_key: str | None = None
-    reasoning_effort: str = "medium"
+    reasoning_effort: str | None = "medium"
 
 
 class OpenAIResponsesEngine(LLMEngine):

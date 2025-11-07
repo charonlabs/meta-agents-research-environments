@@ -19,7 +19,7 @@ from are.simulation.agents.default_agent.prompts import (
     DEFAULT_ARE_SIMULATION_APP_AGENT_REACT_JSON_SYSTEM_PROMPT,
     DEFAULT_ARE_SIMULATION_REACT_JSON_SYSTEM_PROMPT,
 )
-from are.simulation.agents.responses_agent.agent_builder import (
+from are.simulation.agents.responses_agent.agent_factory import (
     RESPONSES_SYSTEM_PROMPT,
 )
 
@@ -72,6 +72,16 @@ class AgentConfigBuilder(AbstractAgentConfigBuilder):
                             provider="openai",
                             
                         )
+                    ),
+                )
+            case "completions":
+                return ARESimulationReactAgentConfig(
+                    agent_name=agent_name,
+                    base_agent_config=ARESimulationReactBaseAgentConfig(
+                        system_prompt=str(
+                            RESPONSES_SYSTEM_PROMPT
+                        ),
+                        max_iterations=2,
                     ),
                 )
 

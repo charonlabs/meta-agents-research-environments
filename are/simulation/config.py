@@ -52,7 +52,8 @@ PROVIDERS = [
     "replicate",
     "sambanova",
     "together",
-    "openai-sdk"
+    "openai-sdk",
+    "completions-api"
 ]
 
 

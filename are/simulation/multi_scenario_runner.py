@@ -128,6 +128,7 @@ def _create_scenario_runner_config(
     runner_config = ScenarioRunnerConfig(
         model=config.model,
         model_provider=config.model_provider,
+        api_key_var=config.api_key_var,
         endpoint=config.endpoint,
         agent=config.agent,
         scenario_creation_params=config.scenario_creation_params,

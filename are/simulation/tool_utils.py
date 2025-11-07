@@ -223,23 +223,38 @@ class AppTool:
                 }
             }
         """
-        d = {}
-        d["type"] = "function"
-        d["function"] = {
-            "name": self._public_name,
-            "description": self._public_description,
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
-        }
+        properties: dict[str, Any] = {}
+        required_fields: list[str] = []
+
         for arg in self.args:
-            d["function"]["parameters"]["properties"][arg.name] = {
-                "type": adapt_type(arg.arg_type),
-                "description": arg.description,
+            schema = self._schema_for_argument(arg)
+            if arg.description:
+                schema["description"] = arg.description
+            if arg.example_value is not None:
+                schema.setdefault("examples", [arg.example_value])
+            properties[arg.name] = schema
+
+            if not arg.has_default and not self._is_optional_type(arg.type_obj):
+                required_fields.append(arg.name)
+
+        parameters: dict[str, Any] = {
+            "type": "object",
+            "properties": properties,
+        }
+        if required_fields:
+            parameters["required"] = required_fields
+
+        tool_name = self._public_name or self.name
+        tool_description = self._public_description or self.function_description or ""
+
+        return {
+            "type": "function",
+            "function": {
+                "name": tool_name,
+                "description": tool_description,
+                "parameters": parameters,
             }
-        d["function"]["parameters"]["required"] = [arg.name for arg in self.args]
-        return d
+        }
 
     def to_open_ai_responses(self):
         """

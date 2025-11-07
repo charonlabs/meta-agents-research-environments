@@ -219,6 +219,7 @@ class ScenarioRunner:
         agent: str,
         model: str,
         provider: str | None = None,
+        api_key_var: str | None = None,
         endpoint: str | None = None,
         max_turns: int | None = None,
         agent_config_params: str = "{}",
@@ -234,7 +235,7 @@ class ScenarioRunner:
         agent_config.get_base_agent_config().use_custom_logger = use_custom_logger
 
         agent_config.get_base_agent_config().llm_engine_config = LLMEngineConfig(
-            model_name=model, provider=provider, endpoint=endpoint
+            model_name=model, provider=provider, endpoint=endpoint, api_key_var=api_key_var
         )
 
         # Create SimulatedGenerationTimeConfig from the mode
@@ -302,6 +303,7 @@ class ScenarioRunner:
                     config.agent,
                     config.model,
                     config.model_provider,
+                    config.api_key_var,
                     config.endpoint,
                     config.max_turns,
                     config.agent_config_params,

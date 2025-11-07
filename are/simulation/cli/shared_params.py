@@ -71,6 +71,18 @@ def endpoint_option():
         help="URL of the endpoint to contact for running the agent's model",
     )
 
+def api_key_var_option():
+    """
+    Create a Click option for specifying the environment variable name for the API key.
+    :returns: Click option decorator for api key variable parameter
+    :rtype: click.Option
+    """
+    return click.option(
+        "--api_key_var",
+        type=str,
+        required=False,
+        help="Environment variable name for the API key",
+    )
 
 # Agent Configuration Options
 def agent_option():
@@ -266,6 +278,7 @@ def core_agent_options():
         func = model_option()(func)
         func = provider_option()(func)
         func = endpoint_option()(func)
+        func = api_key_var_option()(func)
         func = agent_option()(func)
         return func
 

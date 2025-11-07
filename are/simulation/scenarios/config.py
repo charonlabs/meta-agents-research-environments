@@ -41,6 +41,9 @@ class ScenarioRunnerConfig(BaseModel):
     # Optional model provider to use(default: "huggingface")
     model_provider: str | None = DEFAULT_PROVIDER
 
+    # Environment variable name for the API key
+    api_key_var: str | None = None
+
     # Flag indicating whether to use the API state for the model (default: False)
     use_api_state: bool = False
 

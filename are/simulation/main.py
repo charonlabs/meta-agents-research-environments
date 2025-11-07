@@ -165,6 +165,7 @@ def main(
     model: str,
     provider: str | None = None,
     endpoint: str | None = None,
+    api_key_var: str | None = None,
     agent: str | None = None,
     log_level: str = "INFO",
     oracle: bool = False,
@@ -232,6 +233,7 @@ def main(
     runner_config = MultiScenarioRunnerConfig(
         model=model,
         model_provider=provider,
+        api_key_var=api_key_var,
         agent=agent,
         scenario_creation_params=scenario_kwargs,
         scenario_multi_creation_params=multi_scenario_kwargs,
