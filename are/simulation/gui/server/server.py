@@ -73,6 +73,7 @@ class ARESimulationGuiServer:
         model: str | None = None,
         provider: str | None = None,
         endpoint: str | None = None,
+        api_key_var: str | None = None,
         termination_step: str | None = None,
         agent_config_builder: AbstractAgentConfigBuilder | None = None,
         agent_builder: AbstractAgentBuilder | None = None,
@@ -139,6 +140,7 @@ class ARESimulationGuiServer:
         self.model: str | None = model
         self.provider: str | None = provider
         self.endpoint: str | None = endpoint
+        self.api_key_var: str | None = api_key_var
         self.termination_step: str | None = termination_step
         self.agent_config_builder: AbstractAgentConfigBuilder = (
             agent_config_builder
@@ -213,6 +215,7 @@ class ARESimulationGuiServer:
                 default_provider=self.provider,
                 default_endpoint=self.endpoint,
                 default_termination_step=self.termination_step,
+                default_api_key_var=self.api_key_var,
                 notification_system_builder=self.notification_system_builder,
                 db_manager=self.db_manager,
                 dataset_path=self.dataset_path,

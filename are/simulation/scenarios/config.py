@@ -50,6 +50,9 @@ class ScenarioRunnerConfig(BaseModel):
     # Optional agent to use for running the scenarios(default: None)
     agent: str | None = None
 
+    # Termination step to use for the agent
+    termination_step: str = "gaia2"
+
     # Parameters for scenario creation (default: empty dictionary)
     scenario_creation_params: str = "{}"
 

@@ -158,12 +158,18 @@ class CompletionsBaseAgent(BaseAgent):
                     i=id_output_step,
                     timestamp=timestamp,
                 )
-                obs = {
+                obss = [{
                    "role": "tool",
                    "tool_call_id": log.call_id,
                    "content": content
-                }
-                history.append(obs)
+                }]
+                for skipped_id in log.skipped_ids:
+                    obss.append({
+                        "role": "tool",
+                        "tool_call_id": skipped_id,
+                        "content": "Skipped tool call due to too many tool calls in one step. Call this tool again, in isolation, in a following step. No action was taken."
+                    })
+                history.extend(obss)
                 continue
             elif isinstance(log, ErrorLog):
                 history.append({

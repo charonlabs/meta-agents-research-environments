@@ -87,6 +87,7 @@ class ARESimulationGui:
         default_provider: str | None = None,
         default_endpoint: str | None = None,
         default_termination_step: str | None = None,
+        default_api_key_var: str | None = None,
         annotator_name: str | None = None,
         notification_system_builder: Callable[[], BaseNotificationSystem] | None = None,
         db_manager: DatabaseManagerType = None,  # type: ignore[reportInvalidTypeForm]
@@ -102,6 +103,7 @@ class ARESimulationGui:
         self.default_model_name = default_model_name
         self.default_provider = default_provider
         self.default_endpoint = default_endpoint
+        self.default_api_key_var = default_api_key_var
         self.dataset_path: str | None = dataset_path
         self.default_termination_step = default_termination_step
         self.agent_config: RunnableARESimulationAgentConfig | None = (
@@ -307,7 +309,8 @@ class ARESimulationGui:
             )
         if self.default_termination_step is not None:
             self.agent_config.get_base_agent_config().termination_step = self.default_termination_step
-            
+        if self.default_api_key_var is not None:
+            self.agent_config.get_base_agent_config().llm_engine_config.api_key_var = self.default_api_key_var
 
     def get_agent_config_with_schema(self) -> dict[str, Any] | None:
         return (

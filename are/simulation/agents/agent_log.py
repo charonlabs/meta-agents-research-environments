@@ -193,6 +193,7 @@ class ObservationLog(BaseAgentLog):
     attachments: list[Attachment] = field(default_factory=list)
     tool_name: str | None = None
     call_id: str | None = None
+    skipped_ids: list[str] = field(default_factory=list)
 
     def get_content_for_llm(self) -> str | None:
         return self.content

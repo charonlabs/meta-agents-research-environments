@@ -221,6 +221,7 @@ class ScenarioRunner:
         provider: str | None = None,
         api_key_var: str | None = None,
         endpoint: str | None = None,
+        termination_step: str = "gaia2",
         max_turns: int | None = None,
         agent_config_params: str = "{}",
         use_api_state: bool = False,
@@ -245,6 +246,8 @@ class ScenarioRunner:
         agent_config.get_base_agent_config().simulated_generation_time_config = (
             simulated_generation_time_config
         )
+
+        agent_config.get_base_agent_config().termination_step = termination_step
 
         if isinstance(agent_config, MainAgentConfig) and max_turns is not None:
             agent_config.max_turns = max_turns
@@ -305,6 +308,7 @@ class ScenarioRunner:
                     config.model_provider,
                     config.api_key_var,
                     config.endpoint,
+                    config.termination_step,
                     config.max_turns,
                     config.agent_config_params,
                     config.use_api_state,

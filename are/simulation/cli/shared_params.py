@@ -100,6 +100,22 @@ def agent_option():
         help="Agent to use for running the Scenario",
     )
 
+def termination_step_option():
+    """
+    Create a Click option for specifying the termination step to use.
+
+    :returns: Click option decorator for termination step parameter
+    :rtype: click.Option
+    """
+    return click.option(
+    "-ts",
+    "--termination-step",
+    type=click.Choice(["gaia2", "notif", "empty"]),
+    required=False,
+    default="gaia2",
+    help="Termination step to use for the agent",
+)
+
 
 # Logging Configuration
 def log_level_option():
@@ -280,6 +296,7 @@ def core_agent_options():
         func = endpoint_option()(func)
         func = api_key_var_option()(func)
         func = agent_option()(func)
+        func = termination_step_option()(func)
         return func
 
     return decorator

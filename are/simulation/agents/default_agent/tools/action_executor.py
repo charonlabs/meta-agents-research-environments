@@ -6,7 +6,7 @@
 
 
 from abc import abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from are.simulation.agents.agent_log import BaseAgentLog, FinalAnswerLog
@@ -38,6 +38,7 @@ class ParsedAction:
     call_id: str | None = None
     raw_reasoning: list[dict[str, Any]] | None = None
     raw_tool_call: dict[str, Any] | None = None
+    skipped_ids: list[str] = field(default_factory=list)
 
 
 class BaseActionExecutor:

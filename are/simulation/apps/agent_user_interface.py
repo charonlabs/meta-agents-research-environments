@@ -217,6 +217,8 @@ class AgentUserInterface(App):
             attachments = []
         if base64_utf8_encoded_attachment_contents is None:
             base64_utf8_encoded_attachment_contents = []
+        if self.user_proxy is not None and hasattr(self.user_proxy, "history"):
+            self.user_proxy.history.append({"role": "assistant", "content": content}) # type: ignore
         message_id = self._send_message(Sender.USER, content, attachments)
         return message_id
 

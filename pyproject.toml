@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-build-scripts", "hatch-requirements-txt"]
+requires = ["hatchling", "hatch-build-scripts"]
 build-backend = "hatchling.build"
 
 [project]
@@ -8,8 +8,86 @@ version = "1.1.0"
 description = "Meta Agents Research Environments is a research-driven environment designed to simulate complex, real-life tasks that span several minutes and require multiple steps to be solved. Unlike static simulation environments, this platform introduces a dynamic setting where the state of the environment evolves and new information is continuously integrated."
 readme = "README.md"
 license = {text = "MIT License"}
-requires-python = ">=3.10"
-dynamic = ["dependencies", "optional-dependencies"]
+requires-python = ">=3.12"
+dependencies = [
+    # CLI framework
+    "click==8.1.8",
+    # HuggingFace dataset loading and handling
+    "datasets==4.0.0",
+    # Tool schema generation from docstrings
+    "docstring-parser==0.16",
+    # Filesystem abstraction for sandbox and scenario loading
+    "fsspec==2024.12.0",
+    # HuggingFace Hub API for LLM models
+    "huggingface-hub==0.33.4",
+    # CLI interactive input mode
+    "inputimeout==1.0.4",
+    # Template rendering for prompts and personalization
+    "Jinja2==3.1.6",
+    # LLM abstraction layer for multiple providers
+    "litellm>=1.71.1",
+    # Model Context Protocol for tool integration
+    "mcp[cli]>=1.11.0",
+    # Numerical operations for benchmark stats and scenario expansion
+    "numpy==2.2.6",
+    # Image processing for multimodal agents
+    "pillow==11.1.0",
+    # Data processing for benchmark statistics and reporting
+    "polars-lts-cpu==1.33.1",
+    # Data validation and type checking throughout codebase
+    "pydantic>=2.10.6",
+    # Environment variable loading
+    "python-dotenv>=1.0.1",
+    # Fuzzy search in messaging app
+    "rapidfuzz==3.12.1",
+    # Terminal colors for logging and debugging
+    "termcolor==2.5.0",
+    # Document conversion - DOCX to HTML/Markdown
+    "mammoth==1.8.0",
+    # HTML to Markdown conversion
+    "markdownify==0.14.1",
+    # Excel/spreadsheet processing in document conversion
+    "pandas==2.2.3",
+    # PDF text extraction for document conversion
+    "pdfminer.six==20231228",
+    # File type detection for document conversion
+    "puremagic==1.27",
+    # PowerPoint processing for document conversion
+    "python-pptx==1.0.2",
+    "mail",
+]
+
+[project.optional-dependencies]
+dev = [
+    "autoflake==2.3.1",
+    "build==1.2.1",
+    "codespell==2.4.1",
+    "debugpy==1.8.12",
+    "flake8-tidy-imports==4.11.0",
+    "flake8==7.1.1",
+    "hatchling==1.21.1",
+    "pre-commit==2.21.0",
+    "pyright==1.1.406",
+    "pytest==8.3.4",
+    "ruff==0.11.5",
+    "twine==5.0.0",
+    "typer==0.16.0",
+    "langsmith==0.4.37",
+]
+gui = [
+    # FastAPI web framework
+    "fastapi==0.116.1",
+    # ASGI routing and utilities
+    "starlette==0.47.2",
+    # GraphQL implementation
+    "strawberry-graphql==0.275.5",
+    # ASGI server
+    "uvicorn==0.35.0",
+    # WebSocket protocol support
+    "wsproto==1.2.0",
+    # PDF preview functionality in GUI
+    "pypdf==6.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/facebookresearch/meta-agents-research-environments/"
@@ -23,12 +101,8 @@ are-gui = "are.simulation.gui.cli:main"
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
-
-[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
-dev = ["requirements-dev.txt"]
-gui = ["requirements-gui.txt"]
+[tool.uv.sources]
+mail = { git = "https://github.com/charonlabs/mail", branch = "dev" }
 
 
 [tool.hatch.build.targets.wheel]

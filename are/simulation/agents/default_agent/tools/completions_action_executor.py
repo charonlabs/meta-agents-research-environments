@@ -39,15 +39,23 @@ class CompletionsAction:
     call_id: str
     arguments: dict[str, Any]
     rationale: str
+    skipped_ids: list[str]
 
 def _parse_completions_output(output: dict| None) -> CompletionsAction:
     if output is None:
         raise JsonParsingAgentError("Could not parse the completions output due to missing output.")
     tc = output["tool_calls"][0]
-    rationale = output["reasoning_details"][0]["text"]
+    if "reasoning_details" in output:
+        rationale = output["reasoning_details"][0]["text"]
+    else:
+        rationale = output["reasoning_content"]
     tool_name = tc["function"]["name"]
     call_id = tc["id"]
     raw_tool_call = output
+    if len(output["tool_calls"]) > 1:
+        skipped_ids = [tc["id"] for tc in output["tool_calls"][1:]]
+    else:
+        skipped_ids = []
     
     try:
         arguments = json.loads(tc["function"]["arguments"])
@@ -62,6 +70,7 @@ def _parse_completions_output(output: dict| None) -> CompletionsAction:
         call_id=call_id,
         arguments=arguments,
         rationale=rationale,
+        skipped_ids=skipped_ids,
     )
 
 
@@ -71,6 +80,7 @@ def get_observation_log(
     agent_id: str,
     call_id: str,
     attachments: list[Attachment] | None = None,
+    skipped_ids: list[str] = [],
 ) -> ObservationLog:
     if not content and not attachments:
         return ObservationLog(
@@ -82,6 +92,7 @@ def get_observation_log(
         timestamp=timestamp,
         agent_id=agent_id,
         call_id=call_id,
+        skipped_ids=skipped_ids,
     )
 
 
@@ -137,6 +148,7 @@ class CompletionsActionExecutor(BaseActionExecutor):
             action_name=action_name,
             call_id=completions_action.call_id,
             raw_tool_call=completions_action.raw_tool_call,
+            skipped_ids=completions_action.skipped_ids,
         )
 
     def execute_parsed_action(
@@ -192,6 +204,7 @@ class CompletionsActionExecutor(BaseActionExecutor):
                     agent_id,
                     call_id,
                     observation.attachments,
+                    parsed_action.skipped_ids,
                 )
             )
         else:

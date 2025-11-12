@@ -131,6 +131,7 @@ def _create_scenario_runner_config(
         api_key_var=config.api_key_var,
         endpoint=config.endpoint,
         agent=config.agent,
+        termination_step=config.termination_step,
         scenario_creation_params=config.scenario_creation_params,
         scenario_initialization_params=config.scenario_initialization_params,
         oracle=config.oracle,

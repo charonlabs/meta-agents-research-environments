@@ -111,8 +111,6 @@ class ScenarioTutorial(Scenario):
                 content="Hey Assistant, can you take care of transferring the pdf Greg will send me to John? You can send it right away to John Doe.",
             ).depends_on(event1, delay_seconds=1)
 
-            aui.user_proxy.history.append({"role": "assistant", "content": "Hey Assistant, can you take care of transferring the pdf Greg will send me to John? You can send it right away to John Doe."}) # type: ignore
-
             # Define action3: Simulate receiving a message from Greg
             # Event3 depends on event2 and is scheduled 10 seconds after event2.
             event3 = email_client.send_email_to_user(

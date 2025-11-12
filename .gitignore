@@ -182,3 +182,5 @@ workspace*
 benchmark_stats.json
 gaia2_results
 .scripts/
+
+.vscode/

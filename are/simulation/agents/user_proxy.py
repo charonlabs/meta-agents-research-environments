@@ -10,7 +10,9 @@ from abc import ABC, abstractmethod
 
 from openai.types.responses import Response
 
+from are.simulation.agents.are_simulation_agent_config import LLMEngineConfig
 from are.simulation.agents.llm.llm_engine import LLMEngine
+from are.simulation.agents.llm.llm_engine_builder import LLMEngineBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +81,15 @@ Remember, you are roleplaying the HUMAN USER, not the AI agent. You are to respo
 class UserProxyResponses(UserProxy):
     def __init__(
         self,
-        llm: LLMEngine,
-        system_message: str = "You are a Human user interacting with an AI agent that is trying to solve a task you gave them. Never offer to help the agent, or do anything yourself. Always tell the agent to do what you asked it to do.",
+        llm: LLMEngine | None = None,
+        system_message: str = SYS_MSG,
     ):
-        self.llm = llm
+        self.llm = llm if llm else LLMEngineBuilder().create_engine(
+            engine_config=LLMEngineConfig(
+                model_name="gpt-4o",
+                provider="openai",
+            )
+        )
         self.system_message = system_message
         self.history: list[dict[str, str]] = []
         self.history.append({"role": "system", "content": self.system_message})

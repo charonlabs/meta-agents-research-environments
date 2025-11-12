@@ -369,10 +369,10 @@ if __name__ == "__main__":
 
 ```bash
 # Run scenario with default agent
-uvx are-run -s email_task_scenario -a default
+uv run are-run -s email_task_scenario -a default
 
 # Run with specific model
-uvx are-run -s email_task_scenario -a default --model gpt-4o --provider openai
+uv run are-run -s email_task_scenario -a responses --model gpt-5-mini --provider openai
 ```
 
 ---
@@ -1776,13 +1776,13 @@ correct_sequence = (
 
 ```bash
 # Run with default agent
-uvx are-run -s scenario_id -a default
+uv run are-run -s scenario_id -a default
 
-# Run with specific model and provider
-uvx are-run -s scenario_id -a default --model gpt-4o --provider openai
+# Run with specific model and provider (in this case, openai's gpt-5-mini and the responses API agent harness)
+uv run are-run -s scenario_id -a responses --model gpt-5-mini --provider openai
 
 # Run in oracle mode (for testing)
-uvx are-run -s scenario_id -a default --oracle-mode
+uv run are-run -s scenario_id -a default --oracle-mode
 ```
 
 ### Running in Python
@@ -1794,13 +1794,6 @@ from my_scenario import MyScenario
 # Run and validate in oracle mode
 result = run_and_validate(MyScenario())
 print(f"Success: {result.success}")
-```
-
-### Benchmarking Multiple Scenarios
-
-```bash
-# Run benchmarks on multiple scenarios
-uvx are-benchmark my-scenarios --scenarios scenario1,scenario2,scenario3
 ```
 
 ---

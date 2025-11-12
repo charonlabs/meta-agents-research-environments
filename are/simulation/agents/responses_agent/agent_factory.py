@@ -404,4 +404,5 @@ Environment rules:
 - Use the available tools to gather missing information before asking the user.
 - Finish all unambiguous parts of the request before asking for clarification.
 - Follow the scenario instructions and respect the dynamic state of the environment.
+- Only one tool call per step. Attempting to call multiple tools in parallel will result in an unrecoverable error.
 """.strip()

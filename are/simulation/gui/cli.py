@@ -99,18 +99,12 @@ shutdown_event = threading.Event()
     required=False,
     help="Path to the dataset directory containing JSON scenario files organized in subfolders",
 )
-@click.option(
-    "-ts",
-    "--termination-step",
-    type=click.Choice(["gaia2", "notif", "empty"]),
-    required=False,
-    default="gaia2",
-    help="Termination step to use for the agent",
-)
 def main(
     model: str,
     provider: str | None = None,
     endpoint: str | None = None,
+    api_key_var: str | None = None,
+    termination_step: str = "gaia2",
     agent: str | None = None,
     log_level: str = "INFO",
     kwargs: str = "{}",
@@ -125,7 +119,6 @@ def main(
     inactivity_limit: int = 3600,
     cleanup_interval: int = 300,
     dataset_path: str | None = None,
-    termination_step: str = "gaia2",
 ):
     """
     Main entry point for the Meta Agents Research Environments GUI server CLI.
@@ -162,6 +155,7 @@ def main(
         model=model,
         provider=provider,
         endpoint=endpoint,
+        api_key_var=api_key_var,
         termination_step=termination_step,
         default_ui_view=ui_view,
         inactivity_limit=inactivity_limit,

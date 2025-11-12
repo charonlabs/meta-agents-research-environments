@@ -17,6 +17,8 @@ from os import getenv
 from threading import Event
 from typing import Callable, Sequence, Type, TypeVar, Union
 
+from langsmith import traceable
+
 from are.simulation.agents.agent_log import (
     BaseAgentLog,
     ErrorLog,
@@ -772,6 +774,7 @@ class BaseAgent:
             self.logger.warning(f"Stopping agent {self.name}")
         self.stop_event.set()
 
+    @traceable
     def execute_agent_loop(self) -> str | None | MMObservation:
         while (
             self.termination_step.condition is not None
