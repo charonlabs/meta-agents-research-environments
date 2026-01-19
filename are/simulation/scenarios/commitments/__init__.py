@@ -9,4 +9,4 @@ from are.simulation.scenarios.commitments.commitment_tracking import (
 
 __all__ = ["CommitmentTrackingScenario"]
 
-# are-run -s commitment_tracking -a default --model gpt-5-mini --model_provider openai
+# are-run -s commitment_tracking -a responses --model gpt-5-mini --model_provider openai
