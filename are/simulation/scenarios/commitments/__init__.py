@@ -3,7 +3,7 @@ Commitment tracking scenarios for testing
 obligation management across multiple turns.
 """
 
-from are.simulation.scenarios.commitments.commitment_tracking import (
+from are.simulation.scenarios.commitments.scenario import (
     CommitmentTrackingScenario,
 )
 
