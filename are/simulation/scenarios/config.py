@@ -84,7 +84,7 @@ class ScenarioRunnerConfig(BaseModel):
     agent_config_params: str = "{}"
 
     # Maximum number of turns of the conversation between the user and the agent.
-    max_turns: int | None = 1
+    max_turns: int | None = None
 
     # Whether to run only the judge for scenarios.
     judge_only: bool = False
