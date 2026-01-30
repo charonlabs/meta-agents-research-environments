@@ -47,9 +47,11 @@ class CommitmentTrackingScenario(Scenario):
     - Providing accurate summaries excluding cancelled items
     """
 
-    # Scenario runs for 10 minutes
+    # Scenario runs for 60 seconds (enough time for 9 turns at 3s intervals + agent processing)
     start_time: float | None = 0
-    duration: float | None = 600
+    duration: float | None = 60
+
+    print("Initializing Commitment Tracking Scenario...")
 
     def init_and_populate_apps(self, *args, **kwargs) -> None:
         """
@@ -61,7 +63,7 @@ class CommitmentTrackingScenario(Scenario):
         - CalendarApp for managing events and reminders
         """
         # Initialize apps
-        agui = AgentUserInterface(user_proxy=UserProxyResponses())
+        agui = AgentUserInterface()
         email_app = EmailClientApp()
         calendar_app = CalendarApp()
 
@@ -76,33 +78,38 @@ class CommitmentTrackingScenario(Scenario):
         - User messages asking to track commitments
         - Incoming emails with schedule changes
         - Oracle events showing expected agent actions
+
+        Events are scheduled at absolute times (relative to scenario start)
+        to ensure all turns are delivered regardless of agent processing time.
         """
         # Get typed references to apps
         agui = self.get_typed_app(AgentUserInterface)
         email_app = self.get_typed_app(EmailClientApp)
-        calendar_app = self.get_typed_app(CalendarApp)
-
-        # Base date for the scenario (Friday, March 6, 2026, 09:00 UTC)
-        # This aligns with the harness system message
-        base_date = datetime(2026, 3, 6, 9, 0, 0, tzinfo=timezone.utc)
 
         # Use capture_mode to register events from app method calls
         with EventRegisterer.capture_mode():
-            previous_event = None
+            events = []
+            cumulative_time = 0
 
             for turn_data in COMMITMENT_FLOW:
                 turn_num = turn_data["turn"]
                 delay = turn_data.get("delay", 10)
 
+                # Accumulate time for absolute scheduling
+                cumulative_time += delay
+
                 # Handle user messages
                 if "user_message" in turn_data:
                     event = agui.send_message_to_agent(
                         content=turn_data["user_message"]
-                    ).depends_on(previous_event, delay_seconds=delay)
-                    previous_event = event
+                    )
+                    # Schedule at absolute time (relative to scenario start)
+                    # This ensures all turns are delivered regardless of agent state
+                    event.event_relative_time = cumulative_time
+                    events.append(event)
 
                 # Handle incoming emails
-                elif "email" in turn_data:
+                if "email" in turn_data:
                     email_data = turn_data["email"]
                     event = email_app.send_email_to_user(
                         email=Email(
@@ -112,67 +119,13 @@ class CommitmentTrackingScenario(Scenario):
                             content=email_data["content"],
                             email_id=f"email_turn_{turn_num}",
                         )
-                    ).depends_on(previous_event, delay_seconds=delay)
-                    previous_event = event
+                    )
+                    # Schedule at absolute time (relative to scenario start)
+                    event.event_relative_time = cumulative_time
+                    events.append(event)
 
-                # Create oracle events based on expected actions
-                expected = turn_data.get("expected_actions", {})
-                commitment_type = turn_data.get("commitment_type", "")
-
-                if commitment_type == "explicit_reminder" or commitment_type == "implicit_reminder":
-                    # Expected: create a reminder/calendar event
-                    reminder_data = expected.get("reminder", {})
-                    if reminder_data:
-                        oracle_event = (
-                            calendar_app.add_calendar_event(
-                                title=reminder_data.get("title", ""),
-                                start_datetime=reminder_data.get("due_datetime", ""),
-                                end_datetime=reminder_data.get("due_datetime", ""),
-                                description=" ".join(reminder_data.get("description_keywords", [])),
-                            )
-                            .oracle()
-                            .depends_on(previous_event, delay_seconds=5)
-                        )
-                        previous_event = oracle_event
-
-                elif commitment_type == "explicit_calendar":
-                    # Expected: create a calendar event
-                    calendar_data = expected.get("calendar", {})
-                    if calendar_data:
-                        oracle_event = (
-                            calendar_app.add_calendar_event(
-                                title=calendar_data.get("title", ""),
-                                start_datetime=calendar_data.get("start_datetime", ""),
-                                end_datetime=calendar_data.get("end_datetime", ""),
-                                attendees=calendar_data.get("attendees", []),
-                            )
-                            .oracle()
-                            .depends_on(previous_event, delay_seconds=5)
-                        )
-                        previous_event = oracle_event
-
-                elif commitment_type == "update_reminder":
-                    # Expected: update an existing reminder
-                    update_data = expected.get("reminder_update", {})
-                    if update_data:
-                        # Note: CalendarApp doesn't have a direct update method,
-                        # so the agent would need to find and modify the event
-                        # We'll validate this in the validation method
-                        pass
-
-                elif commitment_type == "reschedule_meeting":
-                    # Expected: update an existing calendar event
-                    update_data = expected.get("calendar_update", {})
-                    if update_data:
-                        # Similar to update_reminder, validated in validation method
-                        pass
-
-                elif commitment_type == "cancel_meeting":
-                    # Expected: cancel/delete a calendar event
-                    cancel_data = expected.get("calendar_cancel", {})
-                    if cancel_data:
-                        # Validated in validation method
-                        pass
+            # Assign collected events to the scenario
+            self.events = events
 
     def validate(self, env) -> ScenarioValidationResult:
         """

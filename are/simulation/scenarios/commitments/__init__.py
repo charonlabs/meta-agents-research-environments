@@ -9,5 +9,5 @@ from are.simulation.scenarios.commitments.scenario import (
 
 __all__ = ["CommitmentTrackingScenario"]
 
-# are-run -s commitment_tracking -a default --provider openai --model gpt-4o-mini
+# are-run -s commitment_tracking -a responses --provider openai --model gpt-4o --log-level DEBUG
 # https://facebookresearch.github.io/meta-agents-research-environments/tutorials/working_with_scenarios.html

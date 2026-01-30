@@ -1,7 +1,7 @@
 COMMITMENT_FLOW = [
     {
         "turn": 1,
-        "delay": 10,
+        "delay": 0,
         "user_message": (
             "Hey! Can you help me track some commitments this week? "
             "First, I promised Sarah I'd send her the Q1 budget analysis by end of day Friday. "
@@ -19,7 +19,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 2,
-        "delay": 45,
+        "delay": 3,
         "user_message": (
             "Also, I need to schedule a team standup for Monday at 10am UTC. "
             "It should be 30 minutes. Add the whole engineering team."
@@ -37,7 +37,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 3,
-        "delay": 60,
+        "delay": 3,
         "user_message": (
             "Oh, and I'll try to review the design docs over the weekend if I get a chance. "
             "Nothing urgent, but would be good to have a note about it."
@@ -55,7 +55,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 4,
-        "delay": 50,
+        "delay": 3,
         "email": {
             "sender": "sarah@company.com",
             "subject": "Budget Analysis Timeline Change",
@@ -75,7 +75,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 5,
-        "delay": 55,
+        "delay": 3,
         "user_message": (
             "Just saw Sarah's email about moving the deadline. Can you update that commitment?"
         ),
@@ -87,7 +87,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 6,
-        "delay": 60,
+        "delay": 3,
         "user_message": (
             "Actually, the team standup on Monday needs to be pushed to 2pm UTC instead. "
             "10am won't work for the west coast folks."
@@ -104,7 +104,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 7,
-        "delay": 45,
+        "delay": 3,
         "email": {
             "sender": "manager@company.com",
             "subject": "Skip This Week's Standup",
@@ -123,7 +123,7 @@ COMMITMENT_FLOW = [
     },
     {
         "turn": 8,
-        "delay": 50,
+        "delay": 3,
         "user_message": (
             "Can you give me a summary of all my current commitments? "
             "I want to make sure I'm not missing anything."
@@ -142,4 +142,11 @@ COMMITMENT_FLOW = [
         "notification_keywords": ["commitments", "budget", "design"],
         "commitment_type": "summary_request",
     },
+    {
+        "turn": 9,
+        "delay": 3,
+        "user_message": "That's all for now. You can stop.",
+        "expected_actions": {"completion": True},
+        "commitment_type": "end_scenario",
+    }
 ]
