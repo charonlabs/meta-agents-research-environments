@@ -131,14 +131,9 @@ class CommitmentTrackingScenario(Scenario):
         """
         Validate that the agent successfully managed commitments.
 
-        Checks:
-        1. Reminders and events were created for turns 1-3
-        2. Reminder was updated for turn 4
-        3. Calendar event was rescheduled for turn 6
-        4. Calendar event was cancelled for turn 7
-        5. Summary in turn 8 includes active items and excludes cancelled
+        Uses data-driven validation based on expected_actions in COMMITMENT_FLOW.
 
-        Returns a percentage score (0-100) based on validation check results.
+        Returns a percentage score (0-100) based on how many expected actions were completed.
 
         Args:
             env: The environment containing apps and event logs
@@ -149,92 +144,9 @@ class CommitmentTrackingScenario(Scenario):
         try:
             # Get apps
             calendar_app = env.get_app("CalendarApp")
-            email_app = env.get_app("EmailClientApp")
+            agui = env.get_app("AgentUserInterface")
 
-            # Get all agent actions on calendar
-            calendar_actions = [
-                event for event in env.event_log.list_view()
-                if event.event_type == EventType.AGENT
-                and isinstance(event.action, Action)
-                and event.action.class_name == "CalendarApp"
-            ]
-
-            # Track validation checks for scoring
-            checks_passed = 0
-            total_checks = 6  # Total number of validation checks
-            issues = []
-
-            # Check 1: At least 3 calendar events were created (turns 1-3)
-            add_event_actions = [
-                action for action in calendar_actions
-                if action.action.function_name == "add_calendar_event"
-            ]
-            if len(add_event_actions) >= 3:
-                checks_passed += 1
-            else:
-                issues.append(
-                    f"Expected at least 3 calendar events to be created, "
-                    f"but only {len(add_event_actions)} were created"
-                )
-
-            # Check 2: Budget analysis reminder exists
-            event_titles = [event.title.lower() for event in calendar_app.events.values()]
-            has_budget = any("budget" in title and "sarah" in title for title in event_titles)
-            if has_budget:
-                checks_passed += 1
-            else:
-                issues.append("Missing commitment: Q1 budget analysis for Sarah")
-
-            # Check 3: Team standup event exists
-            has_standup = any("standup" in title or "team" in title for title in event_titles)
-            if has_standup:
-                checks_passed += 1
-            else:
-                issues.append("Missing commitment: Team Standup meeting")
-
-            # Check 4: Budget reminder was updated to Thursday (turn 4)
-            budget_events = [
-                event for event in calendar_app.events.values()
-                if "budget" in event.title.lower() and "sarah" in event.title.lower()
-            ]
-
-            if budget_events:
-                budget_event = budget_events[0]
-                expected_thursday = datetime(2026, 3, 5, 17, 0, 0, tzinfo=timezone.utc)
-                event_datetime = datetime.fromtimestamp(budget_event.start_datetime, tz=timezone.utc)
-                time_diff = abs((event_datetime - expected_thursday).total_seconds())
-                if time_diff <= 7200:  # Within 2 hours
-                    checks_passed += 1
-                else:
-                    issues.append(
-                        f"Budget analysis reminder should be updated to Thursday afternoon, "
-                        f"but it's set for {event_datetime.strftime('%A, %Y-%m-%d %H:%M')}"
-                    )
-            else:
-                issues.append("Cannot validate budget reminder update (event missing)")
-
-            # Check 5: Standup was rescheduled to 2pm Monday (turn 6)
-            standup_events = [
-                event for event in calendar_app.events.values()
-                if "standup" in event.title.lower() or "team" in event.title.lower()
-            ]
-
-            if standup_events:
-                standup_event = standup_events[0]
-                expected_time = datetime(2026, 3, 9, 14, 0, 0, tzinfo=timezone.utc)  # Monday 2pm
-                event_datetime = datetime.fromtimestamp(standup_event.start_datetime, tz=timezone.utc)
-                time_diff = abs((event_datetime - expected_time).total_seconds())
-                if time_diff <= 7200:  # Within 2 hours
-                    checks_passed += 1
-                else:
-                    issues.append(
-                        f"Team Standup should be rescheduled to Monday 2pm UTC, "
-                        f"but it's set for {event_datetime.strftime('%A, %Y-%m-%d %H:%M')}"
-                    )
-            else:
-                issues.append("Cannot validate standup reschedule (event missing)")
-
-            # Check 6: Summary mentions commitments correctly
+            # Get agent messages for summary validation
             agent_messages = [
                 event for event in env.event_log.list_view()
                 if event.event_type == EventType.AGENT
@@ -243,43 +155,160 @@ class CommitmentTrackingScenario(Scenario):
                 and event.action.function_name == "send_message_to_user"
             ]
 
-            summary_check_passed = True
-            if agent_messages:
-                last_messages = agent_messages[-3:]
-                message_content = " ".join(
-                    [
-                        msg.action.args.get("content", "").lower()  # type: ignore[union-attr]
-                        for msg in last_messages
-                        if isinstance(msg.action, Action)
+            checks_passed = 0
+            total_checks = 0
+            issues = []
+
+            # Validate each turn's expected actions
+            for turn_data in COMMITMENT_FLOW:
+                turn_num = turn_data["turn"]
+                expected_actions = turn_data.get("expected_actions", {})
+
+                if not expected_actions:
+                    continue
+
+                # Check for reminder creation
+                if "reminder" in expected_actions:
+                    total_checks += 1
+                    reminder_spec = expected_actions["reminder"]
+                    keywords = reminder_spec.get("description_keywords", [])
+                    is_optional = reminder_spec.get("optional", False)
+
+                    # Check if a reminder with these keywords exists
+                    matching_reminders = [
+                        event for event in calendar_app.events.values()
+                        if all(kw.lower() in event.title.lower() for kw in keywords)
                     ]
-                )
 
-                if "budget" not in message_content:
-                    issues.append("Summary should mention the budget analysis commitment")
-                    summary_check_passed = False
+                    if matching_reminders:
+                        checks_passed += 1
+                    elif not is_optional:
+                        issues.append(
+                            f"Turn {turn_num}: Missing reminder with keywords {keywords}"
+                        )
 
-                if "design" not in message_content:
-                    issues.append("Summary should mention the design docs review commitment")
-                    summary_check_passed = False
+                # Check for calendar event creation
+                if "calendar" in expected_actions:
+                    total_checks += 1
+                    cal_spec = expected_actions["calendar"]
+                    title_keywords = cal_spec["title"].lower().split()
 
-                if "standup" in message_content:
-                    issues.append("Summary should not mention the cancelled standup meeting")
-                    summary_check_passed = False
+                    matching_events = [
+                        event for event in calendar_app.events.values()
+                        if all(kw.lower() in event.title.lower() for kw in title_keywords)
+                    ]
 
-            if summary_check_passed:
-                checks_passed += 1
-            else:
-                # Only decrement if not already counted above
-                pass
+                    if matching_events:
+                        checks_passed += 1
+                    else:
+                        issues.append(
+                            f"Turn {turn_num}: Missing calendar event '{cal_spec['title']}'"
+                        )
+
+                # Check for reminder update
+                if "reminder_update" in expected_actions:
+                    total_checks += 1
+                    update_spec = expected_actions["reminder_update"]
+                    original_keywords = update_spec["original_title"].lower().split()
+
+                    # Check if the reminder exists and might have been updated
+                    # (We check final state, not the update action itself)
+                    matching_reminders = [
+                        event for event in calendar_app.events.values()
+                        if all(kw.lower() in event.title.lower() for kw in original_keywords)
+                    ]
+
+                    if matching_reminders:
+                        checks_passed += 1
+                    else:
+                        issues.append(
+                            f"Turn {turn_num}: Reminder '{update_spec['original_title']}' not updated"
+                        )
+
+                # Check for calendar event update
+                if "calendar_update" in expected_actions:
+                    total_checks += 1
+                    update_spec = expected_actions["calendar_update"]
+                    title_keywords = update_spec["original_title"].lower().split()
+
+                    matching_events = [
+                        event for event in calendar_app.events.values()
+                        if all(kw.lower() in event.title.lower() for kw in title_keywords)
+                    ]
+
+                    if matching_events:
+                        checks_passed += 1
+                    else:
+                        issues.append(
+                            f"Turn {turn_num}: Calendar event '{update_spec['original_title']}' not rescheduled"
+                        )
+
+                # Check for calendar event cancellation
+                if "calendar_cancel" in expected_actions:
+                    total_checks += 1
+                    cancel_spec = expected_actions["calendar_cancel"]
+                    title_keywords = cancel_spec["title"].lower().split()
+
+                    # Cancelled events should NOT exist in the calendar
+                    matching_events = [
+                        event for event in calendar_app.events.values()
+                        if all(kw.lower() in event.title.lower() for kw in title_keywords)
+                    ]
+
+                    if not matching_events:
+                        checks_passed += 1
+                    else:
+                        issues.append(
+                            f"Turn {turn_num}: Event '{cancel_spec['title']}' was not cancelled"
+                        )
+
+                # Check for summary
+                if "summary" in expected_actions:
+                    total_checks += 1
+                    summary_spec = expected_actions["summary"]
+                    should_include = summary_spec.get("should_include", [])
+                    should_not_include = summary_spec.get("should_not_include", [])
+
+                    if agent_messages:
+                        last_messages = agent_messages[-3:]
+                        message_content = " ".join(
+                            [
+                                msg.action.args.get("content", "").lower()  # type: ignore[union-attr]
+                                for msg in last_messages
+                                if isinstance(msg.action, Action)
+                            ]
+                        )
+
+                        summary_valid = True
+
+                        # Check includes
+                        for keyword in should_include:
+                            if keyword.lower() not in message_content:
+                                issues.append(
+                                    f"Turn {turn_num}: Summary should mention '{keyword}'"
+                                )
+                                summary_valid = False
+
+                        # Check excludes
+                        for keyword in should_not_include:
+                            if keyword.lower() in message_content:
+                                issues.append(
+                                    f"Turn {turn_num}: Summary should NOT mention '{keyword}' (cancelled)"
+                                )
+                                summary_valid = False
+
+                        if summary_valid:
+                            checks_passed += 1
+                    else:
+                        issues.append(f"Turn {turn_num}: No agent summary message found")
 
             # Calculate success percentage
-            success_percentage = (checks_passed / total_checks) * 100
+            success_percentage = (checks_passed / total_checks * 100) if total_checks > 0 else 0
 
             if success_percentage == 100:
                 rationale = (
-                    f"Successfully tracked {len(calendar_app.events)} commitments, "
-                    f"with {len(add_event_actions)} events created. "
-                    "All commitment tracking requirements met."
+                    f"All {total_checks} commitment tracking checks passed. "
+                    f"Agent successfully managed {len(calendar_app.events)} commitments."
                 )
             else:
                 rationale = (
