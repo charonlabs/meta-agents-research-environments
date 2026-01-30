@@ -38,9 +38,9 @@ class ScenarioMetadata(TypedDict):
 
 @dataclass
 class ScenarioValidationResult:
-    # Flag indicating whether the scenario validation was successful
+    # Success percentage (0-100) where 100 indicates perfect validation
     # None indicates that the judge or run failed (an exception occurred)
-    success: bool | None
+    success: bool | float | None
 
     # Optional exception that occurred during validation, if any
     exception: Exception | None = None

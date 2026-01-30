@@ -138,11 +138,13 @@ class CommitmentTrackingScenario(Scenario):
         4. Calendar event was cancelled for turn 7
         5. Summary in turn 8 includes active items and excludes cancelled
 
+        Returns a percentage score (0-100) based on validation check results.
+
         Args:
             env: The environment containing apps and event logs
 
         Returns:
-            ScenarioValidationResult with success status and rationale
+            ScenarioValidationResult with success as a percentage (0-100)
         """
         try:
             # Get apps
@@ -157,46 +159,40 @@ class CommitmentTrackingScenario(Scenario):
                 and event.action.class_name == "CalendarApp"
             ]
 
+            # Track validation checks for scoring
+            checks_passed = 0
+            total_checks = 6  # Total number of validation checks
             issues = []
 
-            # Validation 1: Check that reminders/events were created (turns 1-3)
-            # We expect at least 3 calendar events created
+            # Check 1: At least 3 calendar events were created (turns 1-3)
             add_event_actions = [
                 action for action in calendar_actions
                 if action.action.function_name == "add_calendar_event"
             ]
-
-            if len(add_event_actions) < 3:
+            if len(add_event_actions) >= 3:
+                checks_passed += 1
+            else:
                 issues.append(
                     f"Expected at least 3 calendar events to be created, "
                     f"but only {len(add_event_actions)} were created"
                 )
 
-            # Validation 2: Check that specific commitments exist
+            # Check 2: Budget analysis reminder exists
             event_titles = [event.title.lower() for event in calendar_app.events.values()]
-
-            # Check for budget analysis reminder (turn 1)
             has_budget = any("budget" in title and "sarah" in title for title in event_titles)
-            if not has_budget:
+            if has_budget:
+                checks_passed += 1
+            else:
                 issues.append("Missing commitment: Q1 budget analysis for Sarah")
 
-            # Check for team standup event (turn 2)
+            # Check 3: Team standup event exists
             has_standup = any("standup" in title or "team" in title for title in event_titles)
-            if not has_standup:
+            if has_standup:
+                checks_passed += 1
+            else:
                 issues.append("Missing commitment: Team Standup meeting")
 
-            # Check for design docs review (turn 3, optional)
-            has_design_docs = any("design" in title and "doc" in title for title in event_titles)
-            # This is optional, so we don't fail if missing, but we note it
-
-            # Validation 3: Check that the budget reminder was updated (turn 4)
-            # Look for update actions or verify the due date changed
-            update_actions = [
-                action for action in calendar_actions
-                if action.action.function_name in ["update_calendar_event", "delete_calendar_event", "add_calendar_event"]
-            ]
-
-            # Check if budget event has Thursday deadline (updated from Friday)
+            # Check 4: Budget reminder was updated to Thursday (turn 4)
             budget_events = [
                 event for event in calendar_app.events.values()
                 if "budget" in event.title.lower() and "sarah" in event.title.lower()
@@ -204,19 +200,20 @@ class CommitmentTrackingScenario(Scenario):
 
             if budget_events:
                 budget_event = budget_events[0]
-                # Check if the date is Thursday (March 5th) not Friday (March 6th)
                 expected_thursday = datetime(2026, 3, 5, 17, 0, 0, tzinfo=timezone.utc)
                 event_datetime = datetime.fromtimestamp(budget_event.start_datetime, tz=timezone.utc)
-
-                # Allow some flexibility in the time
                 time_diff = abs((event_datetime - expected_thursday).total_seconds())
-                if time_diff > 7200:  # More than 2 hours difference
+                if time_diff <= 7200:  # Within 2 hours
+                    checks_passed += 1
+                else:
                     issues.append(
                         f"Budget analysis reminder should be updated to Thursday afternoon, "
                         f"but it's set for {event_datetime.strftime('%A, %Y-%m-%d %H:%M')}"
                     )
+            else:
+                issues.append("Cannot validate budget reminder update (event missing)")
 
-            # Validation 4: Check that standup was rescheduled to 2pm (turn 6)
+            # Check 5: Standup was rescheduled to 2pm Monday (turn 6)
             standup_events = [
                 event for event in calendar_app.events.values()
                 if "standup" in event.title.lower() or "team" in event.title.lower()
@@ -226,32 +223,18 @@ class CommitmentTrackingScenario(Scenario):
                 standup_event = standup_events[0]
                 expected_time = datetime(2026, 3, 9, 14, 0, 0, tzinfo=timezone.utc)  # Monday 2pm
                 event_datetime = datetime.fromtimestamp(standup_event.start_datetime, tz=timezone.utc)
-
                 time_diff = abs((event_datetime - expected_time).total_seconds())
-                if time_diff > 7200:  # More than 2 hours difference
+                if time_diff <= 7200:  # Within 2 hours
+                    checks_passed += 1
+                else:
                     issues.append(
                         f"Team Standup should be rescheduled to Monday 2pm UTC, "
                         f"but it's set for {event_datetime.strftime('%A, %Y-%m-%d %H:%M')}"
                     )
+            else:
+                issues.append("Cannot validate standup reschedule (event missing)")
 
-            # Validation 5: Check that standup was cancelled (turn 7)
-            # The standup should either be deleted or marked as cancelled somehow
-            delete_actions = [
-                action for action in calendar_actions
-                if action.action.function_name == "delete_calendar_event"
-            ]
-
-            # If standup still exists after turn 7, it should have been deleted
-            # This is tricky because we're checking final state, not the sequence
-            # For now, we check if delete was called
-            if len(standup_events) > 0 and len(delete_actions) == 0:
-                # Standup exists and no delete was called - might be an issue
-                # But this is lenient since the agent might have deleted it
-                pass
-
-            # Validation 6: Check summary completeness (turn 8)
-            # The agent should have mentioned budget and design docs, but not standup
-            # We look at agent messages sent in response
+            # Check 6: Summary mentions commitments correctly
             agent_messages = [
                 event for event in env.event_log.list_view()
                 if event.event_type == EventType.AGENT
@@ -260,9 +243,9 @@ class CommitmentTrackingScenario(Scenario):
                 and event.action.function_name == "send_message_to_user"
             ]
 
-            # Get the last few agent messages (likely the summary)
+            summary_check_passed = True
             if agent_messages:
-                last_messages = agent_messages[-3:]  # Check last 3 messages
+                last_messages = agent_messages[-3:]
                 message_content = " ".join(
                     [
                         msg.action.args.get("content", "").lower()  # type: ignore[union-attr]
@@ -271,35 +254,44 @@ class CommitmentTrackingScenario(Scenario):
                     ]
                 )
 
-                # Should mention budget
                 if "budget" not in message_content:
                     issues.append("Summary should mention the budget analysis commitment")
+                    summary_check_passed = False
 
-                # Should mention design docs
                 if "design" not in message_content:
                     issues.append("Summary should mention the design docs review commitment")
+                    summary_check_passed = False
 
-                # Should NOT mention standup (it was cancelled)
                 if "standup" in message_content:
                     issues.append("Summary should not mention the cancelled standup meeting")
+                    summary_check_passed = False
 
-            # Overall success
-            success = len(issues) == 0
+            if summary_check_passed:
+                checks_passed += 1
+            else:
+                # Only decrement if not already counted above
+                pass
 
-            if success:
+            # Calculate success percentage
+            success_percentage = (checks_passed / total_checks) * 100
+
+            if success_percentage == 100:
                 rationale = (
                     f"Successfully tracked {len(calendar_app.events)} commitments, "
-                    f"with {len(add_event_actions)} events created, "
-                    f"{len(update_actions)} updates, and {len(delete_actions)} deletions. "
+                    f"with {len(add_event_actions)} events created. "
                     "All commitment tracking requirements met."
                 )
             else:
-                rationale = "Commitment tracking had issues:\n" + "\n".join(f"  - {issue}" for issue in issues)
+                rationale = (
+                    f"Commitment tracking achieved {success_percentage:.1f}% success rate. "
+                    f"Passed {checks_passed}/{total_checks} validation checks.\n"
+                    "Issues:\n" + "\n".join(f"  - {issue}" for issue in issues)
+                )
 
-            return ScenarioValidationResult(success=success, rationale=rationale)
+            return ScenarioValidationResult(success=success_percentage, rationale=rationale)
 
         except Exception as e:
-            return ScenarioValidationResult(success=False, exception=e)
+            return ScenarioValidationResult(success=None, exception=e)
 
 
 if __name__ == "__main__":
