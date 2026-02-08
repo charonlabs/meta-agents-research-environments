@@ -17,8 +17,6 @@ The agent must process user messages and incoming emails, then take appropriate
 actions to track commitments in the calendar and reminder systems.
 """
 
-from datetime import datetime, timezone
-
 from are.simulation.agents.user_proxy import UserProxyResponses
 from are.simulation.apps.agent_user_interface import AgentUserInterface
 from are.simulation.apps.calendar import CalendarApp
